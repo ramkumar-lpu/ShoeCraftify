@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -75,11 +76,6 @@ const ForgotPasswordModal = ({ onClose }) => {
         startTimer();
         setSuccess('OTP sent to your email');
         setTimeout(() => setSuccess(''), 3000);
-        
-        // // Log OTP for testing (check console)
-        // if (response.data.otp) {
-        //   console.log('📧 [DEMO] OTP for testing:', response.data.otp);
-        // }
       }
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to send OTP';
@@ -197,11 +193,6 @@ const ForgotPasswordModal = ({ onClose }) => {
         startTimer();
         setSuccess('New OTP sent to your email');
         setTimeout(() => setSuccess(''), 3000);
-        
-        // Log new OTP for testing
-        if (response.data.otp) {
-          console.log('📧 [DEMO] New OTP for testing:', response.data.otp);
-        }
       }
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to resend OTP';
@@ -220,220 +211,223 @@ const ForgotPasswordModal = ({ onClose }) => {
     return () => window.removeEventListener('keydown', handleEscape);
   }, [onClose]);
 
+  // Close modal on background click
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">
-            {step === 1 && 'Forgot Password'}
-            {step === 2 && 'Verify OTP'}
-            {step === 3 && 'Reset Password'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
-            aria-label="Close"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Success Message */}
-        {success && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-green-600 text-sm text-center">{success}</p>
-          </div>
-        )}
-
-        {/* Error Message */}
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-600 text-sm text-center">{error}</p>
-          </div>
-        )}
-
-        {/* Step 1: Enter email for OTP */}
-        {step === 1 && (
-          <div className="space-y-4">
-            <p className="text-gray-600 text-sm">
-              Enter your email address and we'll send you a 6-digit OTP to reset your password.
-            </p>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                placeholder="you@example.com"
-              />
-            </div>
-
-            <p className="text-gray-500 text-xs">
-              We will send a 6-digit OTP to your email. It expires in 10 minutes.
-              Check your console for OTP during testing.
-            </p>
-
+    <div 
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      onClick={handleBackdropClick}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 sm:mx-6 md:mx-auto overflow-hidden">
+        {/* Modal Container with responsive padding */}
+        <div className="p-4 sm:p-6 md:p-8">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+              {step === 1 && 'Forgot Password'}
+              {step === 2 && 'Verify OTP'}
+              {step === 3 && 'Reset Password'}
+            </h2>
             <button
-              onClick={handleRequestOTP}
-              disabled={isLoading}
-              className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 p-1 sm:p-2 rounded-full hover:bg-gray-100 transition-colors"
+              aria-label="Close"
             >
-              {isLoading ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Sending OTP...
-                </span>
-              ) : (
-                'Send OTP'
-              )}
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
-        )}
 
-        {/* Step 2: Enter OTP */}
-        {step === 2 && (
-          <div className="space-y-4">
-            <p className="text-gray-600 text-sm">
-              Enter the 6-digit OTP sent to <span className="font-semibold text-gray-900">{email}</span>
-            </p>
-            
-            <div className="flex justify-center space-x-2 mb-4">
-              {otp.map((digit, index) => (
+          {/* Success Message */}
+          {success && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-green-600 text-sm text-center">{success}</p>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600 text-sm text-center">{error}</p>
+            </div>
+          )}
+
+          {/* Step 1: Enter email for OTP */}
+          {step === 1 && (
+            <div className="space-y-4">
+              <p className="text-gray-600 text-sm">
+                Enter your email address and we'll send you a 6-digit OTP to reset your password.
+              </p>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address
+                </label>
                 <input
-                  key={index}
-                  id={`otp-${index}`}
-                  type="text"
-                  maxLength="1"
-                  value={digit}
-                  onChange={(e) => handleOtpChange(index, e.target.value)}
-                  onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                  className="w-12 h-12 text-center text-xl font-bold border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  placeholder="you@example.com"
                 />
-              ))}
-            </div>
+              </div>
 
-            <div className="text-center">
-              {timer > 0 ? (
-                <p className="text-sm text-gray-600">
-                  Resend OTP in {timer} seconds
-                </p>
-              ) : (
+              <p className="text-gray-500 text-xs">
+                We will send a 6-digit OTP to your email. It expires in 10 minutes.
+              </p>
+
+              <button
+                onClick={handleRequestOTP}
+                disabled={isLoading}
+                className="w-full py-2 sm:py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Sending OTP...
+                  </span>
+                ) : (
+                  'Send OTP'
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Step 2: Enter OTP */}
+          {step === 2 && (
+            <div className="space-y-4">
+              <p className="text-gray-600 text-sm">
+                Enter the 6-digit OTP sent to <span className="font-semibold text-gray-900 break-all">{email}</span>
+              </p>
+              
+              <div className="flex justify-center space-x-1 sm:space-x-2 mb-4">
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    id={`otp-${index}`}
+                    type="text"
+                    maxLength="1"
+                    value={digit}
+                    onChange={(e) => handleOtpChange(index, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                    className="w-10 h-10 sm:w-12 sm:h-12 text-center text-lg sm:text-xl font-bold border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  />
+                ))}
+              </div>
+
+              <div className="text-center">
+                {timer > 0 ? (
+                  <p className="text-sm text-gray-600">
+                    Resend OTP in {timer} seconds
+                  </p>
+                ) : (
+                  <button
+                    onClick={handleResendOtp}
+                    disabled={!resendAvailable || isLoading}
+                    className="text-sm text-blue-600 hover:text-blue-800 font-medium disabled:text-gray-400 disabled:cursor-not-allowed"
+                  >
+                    Resend OTP
+                  </button>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
                 <button
-                  onClick={handleResendOtp}
-                  disabled={!resendAvailable || isLoading}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-medium disabled:text-gray-400 disabled:cursor-not-allowed"
+                  onClick={() => {
+                    setStep(1);
+                    setOtp(['', '', '', '', '', '']);
+                    setError('');
+                    setSuccess('');
+                  }}
+                  className="w-full sm:flex-1 py-2 sm:py-3 px-4 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  Resend OTP
+                  Back
                 </button>
-              )}
-            </div>
-
-            <div className="flex space-x-3">
-              <button
-                onClick={() => {
-                  setStep(1);
-                  setOtp(['', '', '', '', '', '']);
-                  setError('');
-                  setSuccess('');
-                }}
-                className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Back
-              </button>
-              <button
-                onClick={handleVerifyOtp}
-                disabled={isLoading || otp.join('').length !== 6}
-                className="flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? 'Verifying...' : 'Verify OTP'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 3: New Password */}
-        {step === 3 && (
-          <div className="space-y-4">
-            <p className="text-gray-600 text-sm">
-              Create your new password
-            </p>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                New Password
-              </label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                placeholder="Enter new password"
-              />
-              <div className="mt-2 space-y-1">
-                <p className={`text-xs ${newPassword.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
-                  ✓ At least 8 characters
-                </p>
-                <p className={`text-xs ${/[A-Z]/.test(newPassword) ? 'text-green-600' : 'text-gray-500'}`}>
-                  ✓ Contains uppercase letter
-                </p>
-                <p className={`text-xs ${/[0-9]/.test(newPassword) ? 'text-green-600' : 'text-gray-500'}`}>
-                  ✓ Contains number
-                </p>
+                <button
+                  onClick={handleVerifyOtp}
+                  disabled={isLoading || otp.join('').length !== 6}
+                  className="w-full sm:flex-1 py-2 sm:py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Verifying...' : 'Verify OTP'}
+                </button>
               </div>
             </div>
+          )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                placeholder="Confirm new password"
-              />
-              {confirmPassword && newPassword !== confirmPassword && (
-                <p className="mt-1 text-xs text-red-600">Passwords do not match</p>
-              )}
+          {/* Step 3: New Password */}
+          {step === 3 && (
+            <div className="space-y-4">
+              <p className="text-gray-600 text-sm">
+                Create your new password
+              </p>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  placeholder="Enter new password"
+                />
+                <div className="mt-2 space-y-1">
+                  <p className={`text-xs ${newPassword.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
+                    ✓ At least 8 characters
+                  </p>
+                  <p className={`text-xs ${/[A-Z]/.test(newPassword) ? 'text-green-600' : 'text-gray-500'}`}>
+                    ✓ Contains uppercase letter
+                  </p>
+                  <p className={`text-xs ${/[0-9]/.test(newPassword) ? 'text-green-600' : 'text-gray-500'}`}>
+                    ✓ Contains number
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  placeholder="Confirm new password"
+                />
+                {confirmPassword && newPassword !== confirmPassword && (
+                  <p className="mt-1 text-xs text-red-600">Passwords do not match</p>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                <button
+                  onClick={() => setStep(2)}
+                  className="w-full sm:flex-1 py-2 sm:py-3 px-4 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={handleResetPassword}
+                  disabled={isLoading || !newPassword || !confirmPassword || newPassword !== confirmPassword}
+                  className="w-full sm:flex-1 py-2 sm:py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Resetting...' : 'Reset Password'}
+                </button>
+              </div>
             </div>
-
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setStep(2)}
-                className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Back
-              </button>
-              <button
-                onClick={handleResetPassword}
-                disabled={isLoading || !newPassword || !confirmPassword || newPassword !== confirmPassword}
-                className="flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? 'Resetting...' : 'Reset Password'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Test Mode Notice */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-4 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-xs text-yellow-800 text-center">
-              Development Mode: Check console for OTP during testing
-            </p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
