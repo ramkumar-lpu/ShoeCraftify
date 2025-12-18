@@ -1,4 +1,3 @@
-
 import express from 'express';
 import passport from 'passport';
 import rateLimit from 'express-rate-limit';
@@ -9,15 +8,16 @@ import {
   sendPasswordResetOTPEmail, 
   sendPasswordChangedEmail,
   sendWelcomeEmail,
-  sendLoginAlertEmail
+  sendLoginAlertEmail,
+  sendVerificationOTPEmail
 } from '../config/email.js';
 
 const router = express.Router();
 
 // ========== RATE LIMITING MIDDLEWARE ==========
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts per window
+  windowMs: 15 * 60 * 1000,
+  max: 5,
   message: {
     success: false,
     message: 'Too many attempts, please try again later.'
@@ -26,8 +26,8 @@ const authLimiter = rateLimit({
 });
 
 const otpLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 3, // 3 OTP requests per 15 minutes
+  windowMs: 15 * 60 * 1000,
+  max: 3,
   message: {
     success: false,
     message: 'Too many OTP requests. Please try again later.'
@@ -35,11 +35,20 @@ const otpLimiter = rateLimit({
 });
 
 const otpVerifyLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 5, // 5 verification attempts per 5 minutes
+  windowMs: 5 * 60 * 1000,
+  max: 5,
   message: {
     success: false,
     message: 'Too many verification attempts. Please request a new OTP.'
+  }
+});
+
+const registrationOTPLimiter = rateLimit({
+  windowMs: 30 * 60 * 1000,
+  max: 5,
+  message: {
+    success: false,
+    message: 'Too many registration OTP requests. Please try again later.'
   }
 });
 
@@ -114,21 +123,23 @@ router.get('/google/callback',
   }
 );
 
-// ========== MANUAL REGISTRATION ==========
-router.post('/register', validateRegisterInput, async (req, res) => {
+// ========== REGISTRATION FLOW ==========
+
+// STEP 1: Register user and send OTP
+router.post('/register', registrationOTPLimiter, validateRegisterInput, async (req, res) => {
   try {
     const { firstName, lastName, email, password } = req.body;
     
-    // Normalize email
-    const normalizedEmail = validator.normalizeEmail(email);//what is does here is it converts email to standard format
+    console.log('📝 Registration attempt for:', email);
+    
+    const normalizedEmail = validator.normalizeEmail(email);
     
     // Check if user exists
-    const existingUser = await User.findOne({ 
-      email: normalizedEmail 
-    });
+    const existingUser = await User.findOne({ email: normalizedEmail });
     
     if (existingUser) {
-      // Check account type for better UX
+      console.log('⚠️ User already exists:', normalizedEmail);
+      
       if (existingUser.accountType === 'google') {
         return res.status(409).json({
           success: false,
@@ -137,56 +148,51 @@ router.post('/register', validateRegisterInput, async (req, res) => {
         });
       }
       
-      return res.status(409).json({
-        success: false,
-        message: 'An account with this email already exists. Try logging in instead.'
-      });
+      if (existingUser.isEmailVerified) {
+        return res.status(409).json({
+          success: false,
+          message: 'An account with this email already exists. Try logging in instead.'
+        });
+      }
+      
+      // Delete unverified user
+      console.log('🗑️ Deleting unverified user:', existingUser._id);
+      await User.deleteOne({ _id: existingUser._id });
     }
     
-    // Create user
+    // Create new user
     const user = new User({
       firstName: validator.escape(firstName.trim()),
       lastName: validator.escape(lastName.trim()),
       email: normalizedEmail,
       password,
       accountType: 'local',
+      isEmailVerified: false,
       registrationIp: req.ip,
-      userAgent: req.get('User-Agent')
+      userAgent: req.get('User-Agent'),
+      registrationStatus: 'pending_verification'
     });
+    
+    // Generate OTP
+    const otp = user.generateVerificationOTP();
+    console.log('🔐 Generated OTP for user:', user._id);
     
     await user.save();
     
-    // Generate email verification token
-    const verificationToken = user.generateEmailVerificationToken();
-    await user.save();
-    
-    // Send welcome email
-    await sendWelcomeEmail(user, verificationToken);
-    
-    // Log the user in
-    req.login(user, (err) => {
-      if (err) {
-        console.error('Auto-login error:', err);
-      }
-    });
+    // Send verification email
+    console.log('📧 Sending verification email to:', normalizedEmail);
+    await sendVerificationOTPEmail(user, otp);
     
     res.status(201).json({
       success: true,
-      message: 'Registration successful!',
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        fullName: user.fullName,
-        isEmailVerified: user.isEmailVerified
-      }
+      message: 'Registration initiated! Please check your email for verification OTP.',
+      email: normalizedEmail,
+      userId: user._id
     });
     
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('❌ Registration error:', error);
     
-    // Handle specific MongoDB errors
     if (error.code === 11000) {
       return res.status(409).json({
         success: false,
@@ -201,15 +207,148 @@ router.post('/register', validateRegisterInput, async (req, res) => {
   }
 });
 
+// STEP 2: Verify OTP and activate account - SIMPLIFIED VERSION
+router.post('/verify-registration-otp', otpVerifyLimiter, async (req, res) => {
+  console.log('🔍 OTP verification request received');
+  
+  try {
+    const { email, otp } = req.body;
+    
+    console.log('📧 Email:', email, 'OTP length:', otp?.length);
+    
+    if (!email || !validator.isEmail(email) || !otp || otp.length !== 6) {
+      console.log('❌ Invalid input');
+      return res.status(400).json({
+        success: false,
+        message: 'Valid email and 6-digit OTP are required'
+      });
+    }
+    
+    const normalizedEmail = validator.normalizeEmail(email);
+    
+    // CRITICAL: Select OTP fields since they're marked select: false
+    const user = await User.findOne({ 
+      email: normalizedEmail,
+      registrationStatus: 'pending_verification'
+    }).select('+verificationOTP +verificationOTPExpires');
+    
+    console.log('👤 User found:', user ? 'Yes' : 'No');
+    
+    if (!user) {
+      console.log('❌ No pending registration found');
+      return res.status(404).json({
+        success: false,
+        message: 'No pending registration found. Please register again.'
+      });
+    }
+    
+    // Verify OTP
+    console.log('🔐 Verifying OTP...');
+    const isValidOTP = user.verifyRegistrationOTP(otp);
+    
+    if (!isValidOTP) {
+      console.log('❌ Invalid OTP');
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired OTP'
+      });
+    }
+    
+    console.log('✅ OTP verified successfully');
+    
+    // Activate user
+    user.isEmailVerified = true;
+    user.verificationOTP = undefined;
+    user.verificationOTPExpires = undefined;
+    user.registrationStatus = 'completed';
+    user.emailVerifiedAt = new Date();
+    user.resetFailedAttempts();
+    
+    await user.save();
+    console.log('✅ User account activated:', user._id);
+    
+    // Send welcome email
+    sendWelcomeEmail(user).catch(err => console.error('Email error:', err));
+    
+    // SIMPLIFIED: Always redirect to profile, let frontend handle login
+    res.json({
+      success: true,
+      message: 'Email verified successfully! Redirecting to profile...',
+      redirectTo: '/profile',
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        fullName: user.fullName,
+        isEmailVerified: user.isEmailVerified
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ OTP verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to verify OTP. Please try again.'
+    });
+  }
+});
+
+// STEP 3: Resend OTP
+router.post('/resend-registration-otp', registrationOTPLimiter, async (req, res) => {
+  console.log('🔄 Resend OTP request');
+  
+  try {
+    const { email } = req.body;
+    
+    if (!email || !validator.isEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid email is required'
+      });
+    }
+    
+    const normalizedEmail = validator.normalizeEmail(email);
+    const user = await User.findOne({ 
+      email: normalizedEmail,
+      registrationStatus: 'pending_verification'
+    });
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'No pending registration found. Please register again.'
+      });
+    }
+    
+    // Generate new OTP
+    const otp = user.generateVerificationOTP();
+    await user.save();
+    
+    console.log('📧 Sending new OTP to:', normalizedEmail);
+    await sendVerificationOTPEmail(user, otp);
+    
+    res.json({
+      success: true,
+      message: 'New verification OTP sent to your email',
+      email: normalizedEmail
+    });
+    
+  } catch (error) {
+    console.error('❌ Resend OTP error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to resend OTP. Please try again.'
+    });
+  }
+});
+
 // ========== MANUAL LOGIN ==========
 router.post('/login', authLimiter, validateLoginInput, async (req, res, next) => {
   try {
     const { email, password, rememberMe } = req.body;
     
-    // Normalize email
     const normalizedEmail = validator.normalizeEmail(email);
-    
-    // Find user
     const user = await User.findOne({ email: normalizedEmail })
       .select('+password +failedLoginAttempts +accountLockedUntil');
     
@@ -220,17 +359,14 @@ router.post('/login', authLimiter, validateLoginInput, async (req, res, next) =>
       });
     }
     
-    // Check if account is locked
+    // Check account lock
     if (user.isAccountLocked()) {
-      const lockTime = Math.ceil((user.accountLockedUntil - Date.now()) / 60000);
       return res.status(423).json({
         success: false,
-        message: `Account is temporarily locked. Try again in ${lockTime} minutes or reset your password.`,
-        lockedUntil: user.accountLockedUntil
+        message: 'Account is temporarily locked. Try again later.'
       });
     }
     
-    // Check account type
     if (user.accountType === 'google') {
       return res.status(401).json({
         success: false,
@@ -239,52 +375,46 @@ router.post('/login', authLimiter, validateLoginInput, async (req, res, next) =>
       });
     }
     
-    // Check if email is verified (if required)
-    if (process.env.REQUIRE_EMAIL_VERIFICATION === 'true' && !user.isEmailVerified) {
+    if (!user.isEmailVerified) {
       return res.status(403).json({
         success: false,
         message: 'Please verify your email before logging in.',
-        isEmailVerified: false
+        isEmailVerified: false,
+        email: user.email
       });
     }
     
     // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      // Increment failed attempts
       user.incrementFailedAttempts();
       await user.save();
       
-      const remainingAttempts = 5 - user.failedLoginAttempts;
-      const message = remainingAttempts > 0 
-        ? `Invalid email or password. ${remainingAttempts} attempt${remainingAttempts > 1 ? 's' : ''} remaining.`
-        : 'Account locked. Too many failed attempts. Try again in 15 minutes or reset your password.';
-      
       return res.status(401).json({
         success: false,
-        message,
-        remainingAttempts: remainingAttempts > 0 ? remainingAttempts : 0
+        message: 'Invalid email or password'
       });
     }
     
-    // Reset failed attempts on successful login
+    // Successful login
     user.resetFailedAttempts();
     user.lastLogin = new Date();
     user.lastLoginIp = req.ip;
     await user.save();
     
-    // Configure session based on rememberMe
+    // Configure session
     if (rememberMe && req.session) {
-      req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+      req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
     }
     
-    // Log the user in
+    // Log user in
     req.login(user, (err) => {
       if (err) {
+        console.error('Login error:', err);
         return next(err);
       }
       
-      // Send login alert email (optional)
+      // Send login alert
       if (user.preferences?.loginAlerts) {
         sendLoginAlertEmail(user, {
           ip: req.ip,
@@ -319,7 +449,7 @@ router.post('/login', authLimiter, validateLoginInput, async (req, res, next) =>
   }
 });
 
-// ========== FORGOT PASSWORD (OTP ONLY) ==========
+// ========== FORGOT PASSWORD ==========
 router.post('/forgot-password', otpLimiter, async (req, res) => {
   try {
     const { email } = req.body;
@@ -335,14 +465,12 @@ router.post('/forgot-password', otpLimiter, async (req, res) => {
     const user = await User.findOne({ email: normalizedEmail });
     
     if (!user) {
-      // Security: generic response
       return res.json({
         success: true,
-        message: 'If an account exists with this email, you will receive a password reset OTP.'
+        message: 'If an account exists, you will receive a password reset OTP.'
       });
     }
     
-    // Check if it's a Google account
     if (user.accountType === 'google') {
       return res.status(400).json({
         success: false,
@@ -351,21 +479,25 @@ router.post('/forgot-password', otpLimiter, async (req, res) => {
       });
     }
     
-    // Generate OTP using your model method
+    if (!user.isEmailVerified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please verify your email first before resetting password.',
+        isEmailVerified: false
+      });
+    }
+    
     const otp = user.generateResetOTP();
     await user.save();
     
-    // Send email with OTP
     await sendPasswordResetOTPEmail(user, otp);
     
     res.json({
       success: true,
-      message: 'Password reset OTP sent to your email',
-      // For testing in development only
-      ...(process.env.NODE_ENV === 'development' && { otp })
+      message: 'Password reset OTP sent to your email'
     });
   } catch (error) {
-    console.error('Forgot password OTP error:', error);
+    console.error('Forgot password error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to send OTP. Please try again.'
@@ -373,7 +505,7 @@ router.post('/forgot-password', otpLimiter, async (req, res) => {
   }
 });
 
-// ========== VERIFY OTP ==========
+// ========== VERIFY RESET OTP ==========
 router.post('/verify-reset-otp', otpVerifyLimiter, async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -395,7 +527,6 @@ router.post('/verify-reset-otp', otpVerifyLimiter, async (req, res) => {
       });
     }
     
-    // Verify OTP using your model method
     const isValidOTP = user.verifyResetOTP(otp);
     
     if (!isValidOTP) {
@@ -405,14 +536,13 @@ router.post('/verify-reset-otp', otpVerifyLimiter, async (req, res) => {
       });
     }
     
-    // Create a simple token for frontend (not stored in DB)
     const frontendToken = crypto.randomBytes(32).toString('hex');
     
     res.json({
       success: true,
       message: 'OTP verified successfully',
       resetToken: frontendToken,
-      expiresIn: 10 * 60 * 1000 // 10 minutes
+      expiresIn: 10 * 60 * 1000
     });
   } catch (error) {
     console.error('Verify OTP error:', error);
@@ -423,12 +553,11 @@ router.post('/verify-reset-otp', otpVerifyLimiter, async (req, res) => {
   }
 });
 
-// ========== RESET PASSWORD WITH VERIFIED OTP ==========
+// ========== RESET PASSWORD ==========
 router.post('/reset-password', async (req, res) => {
   try {
     const { email, resetToken, password } = req.body;
     
-    // Validate inputs (we accept the resetToken but don't verify it server-side for OTP flow)
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -436,7 +565,6 @@ router.post('/reset-password', async (req, res) => {
       });
     }
     
-    // Password validation
     if (password.length < 6) {
       return res.status(400).json({
         success: false,
@@ -455,7 +583,6 @@ router.post('/reset-password', async (req, res) => {
       });
     }
     
-    // Check if OTP exists and not expired (simplified check)
     if (!user.resetPasswordOTP || !user.resetPasswordOTPExpires) {
       return res.status(400).json({
         success: false,
@@ -470,7 +597,6 @@ router.post('/reset-password', async (req, res) => {
       });
     }
     
-    // Check if new password is same as old password
     const isSamePassword = await user.comparePassword(password);
     if (isSamePassword) {
       return res.status(400).json({
@@ -479,20 +605,13 @@ router.post('/reset-password', async (req, res) => {
       });
     }
     
-    // Set new password
     user.password = password;
-    
-    // Clear all reset tokens and OTP data
     user.clearTokens();
-    
-    // Reset failed login attempts
     user.resetFailedAttempts();
-    
     user.lastPasswordChange = new Date();
     
     await user.save();
     
-    // Send confirmation email
     await sendPasswordChangedEmail(user);
     
     res.json({
@@ -538,6 +657,7 @@ router.get('/user', (req, res) => {
 router.post('/logout', (req, res) => {
   req.logout((err) => {
     if (err) {
+      console.error('Logout error:', err);
       return res.status(500).json({
         success: false,
         message: 'Logout failed'
@@ -545,11 +665,8 @@ router.post('/logout', (req, res) => {
     }
     
     req.session.destroy((err) => {
-      if (err) {
-        console.error('Session destroy error:', err);
-      }
+      if (err) console.error('Session destroy error:', err);
       
-      // Clear the session cookie
       res.clearCookie('connect.sid', {
         path: '/',
         httpOnly: true,
@@ -593,7 +710,8 @@ router.get('/check-account/:email', async (req, res) => {
       exists: true,
       accountType: user.accountType,
       isEmailVerified: user.isEmailVerified,
-      isLocked: user.isAccountLocked()
+      isLocked: user.isAccountLocked(),
+      registrationStatus: user.registrationStatus
     });
   } catch (error) {
     console.error('Check account error:', error);

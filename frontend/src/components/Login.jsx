@@ -77,7 +77,7 @@ const Login = ({ onLoginSuccess }) => {
     }
   };
 
-  // Manual registration
+  // Manual registration - UPDATED WITH OTP REDIRECT
   const handleSignup = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -125,16 +125,30 @@ const Login = ({ onLoginSuccess }) => {
       console.log('Signup response:', response.data);
       
       if (response.data.success) {
-        console.log('Signup successful, calling onLoginSuccess with:', response.data.user);
+        console.log('✅ Signup successful, redirecting to OTP verification');
         
-        // Call the parent's login success handler FIRST
-        if (onLoginSuccess) {
-          onLoginSuccess(response.data.user);
+        // CRITICAL: Store email in localStorage for OTP page
+        const normalizedEmail = formData.email.trim().toLowerCase();
+        localStorage.setItem('pendingVerificationEmail', normalizedEmail);
+        
+        // Store timestamp for OTP expiration tracking
+        localStorage.setItem('otpSentTimestamp', Date.now().toString());
+        
+        // For development/testing - log OTP if available
+        if (process.env.NODE_ENV === 'development' && response.data.otp) {
+          console.log('📧 Dev OTP:', response.data.otp);
         }
         
-        // Then navigate without page reload
-        console.log('Navigating to /profile');
-        navigate('/profile');
+        // Navigate to OTP verification page
+        navigate('/otp-verification', {
+          replace: true,
+          state: {
+            email: normalizedEmail,
+            registrationSuccess: true,
+            message: 'Registration successful! Please verify your email.'
+          }
+        });
+        
       } else {
         setErrors({ form: response.data.message || 'Registration failed' });
         setIsLoading(false);
@@ -145,12 +159,17 @@ const Login = ({ onLoginSuccess }) => {
       
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
+        if (error.response.data.accountType === 'google') {
+          errorMessage = 'Account exists with Google. Please use Google login.';
+        }
       } else if (error.response?.status === 400) {
         if (error.response.data.message?.includes('already exists')) {
           errorMessage = 'Email already registered. Try logging in instead.';
         } else {
           errorMessage = error.response.data.message;
         }
+      } else if (error.response?.status === 409) {
+        errorMessage = 'Email already registered';
       }
       
       setErrors({ form: errorMessage });
@@ -286,23 +305,23 @@ const Login = ({ onLoginSuccess }) => {
             </div>
 
             {/* Tabs */}
-            <div className="flex mb-6 bg-gray-100 rounded-lg p-1 cursor-pointer">
+            <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => handleTabChange('login')}
-                className={`flex-1 py-2 rounded-md font-medium transition-colors cursor-pointer ${
+                className={`flex-1 py-2 rounded-md font-medium transition-colors ${
                   activeTab === 'login'
-                    ? 'bg-white text-gray-900 shadow-sm cursor-pointer'
-                    : 'text-gray-600 hover:text-gray-900 cursor-pointer'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 Login
               </button>
               <button
                 onClick={() => handleTabChange('signup')}
-                className={`flex-1 py-2 rounded-md font-medium transition-colors  cursor-pointer${
+                className={`flex-1 py-2 rounded-md font-medium transition-colors ${
                   activeTab === 'signup'
-                    ? 'bg-white text-gray-900 shadow-sm cursor-pointer'
-                    : 'text-gray-600 hover:text-gray-900 cursor-pointer'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 Sign Up
@@ -418,7 +437,7 @@ const Login = ({ onLoginSuccess }) => {
                   <button
                     type="button"
                     onClick={() => setShowForgotPassword(true)}
-                    className="text-sm text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
+                    className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                   >
                     Forgot Password?
                   </button>
@@ -434,7 +453,7 @@ const Login = ({ onLoginSuccess }) => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg cursor-pointer"
+                className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center">
@@ -451,9 +470,9 @@ const Login = ({ onLoginSuccess }) => {
             </form>
 
             {/* Divider */}
-            <div className="my-6 flex items-center cursor-pointer">
-              <div className="flex-grow border-t border-gray-300 " />
-              <span className="mx-4 text-gray-500 text-sm ">Or continue with</span>
+            <div className="my-6 flex items-center">
+              <div className="flex-grow border-t border-gray-300" />
+              <span className="mx-4 text-gray-500 text-sm">Or continue with</span>
               <div className="flex-grow border-t border-gray-300" />
             </div>
 
@@ -461,7 +480,7 @@ const Login = ({ onLoginSuccess }) => {
             <button
               onClick={handleGoogleLogin}
               disabled={isLoading}
-              className="w-full py-3 px-4 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-sm hover:shadow cursor-pointer"
+              className="w-full py-3 px-4 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-sm hover:shadow"
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
