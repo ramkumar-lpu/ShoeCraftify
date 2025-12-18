@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ForgotPasswordModal from './ForgotPasswordModal';
 
-const Login = () => {
+const Login = ({ onLoginSuccess }) => {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -16,6 +18,7 @@ const Login = () => {
   const [errors, setErrors] = useState({});
 
   const handleGoogleLogin = () => {
+    console.log('Initiating Google login...');
     window.location.href = '/api/auth/google';
   };
 
@@ -24,6 +27,7 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     setErrors({});
+    console.log('Attempting login...');
 
     if (!formData.email || !formData.password) {
       setErrors({ form: 'Please fill in all fields' });
@@ -39,8 +43,22 @@ const Login = () => {
         withCredentials: true
       });
 
+      console.log('Login response:', response.data);
+      
       if (response.data.success) {
-        window.location.href = '/dashboard';
+        console.log('Login successful, calling onLoginSuccess with:', response.data.user);
+        
+        // Call the parent's login success handler FIRST
+        if (onLoginSuccess) {
+          onLoginSuccess(response.data.user);
+        }
+        
+        // Then navigate without page reload
+        console.log('Navigating to /profile');
+        navigate('/profile');
+      } else {
+        setErrors({ form: response.data.message || 'Login failed' });
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -59,11 +77,12 @@ const Login = () => {
     }
   };
 
-  // Manual registration
+  // Manual registration - UPDATED WITH OTP REDIRECT
   const handleSignup = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setErrors({});
+    console.log('Attempting signup...');
 
     // Validation
     const newErrors = {};
@@ -103,8 +122,36 @@ const Login = () => {
         withCredentials: true
       });
 
+      console.log('Signup response:', response.data);
+      
       if (response.data.success) {
-        window.location.href = '/dashboard';
+        console.log('✅ Signup successful, redirecting to OTP verification');
+        
+        // CRITICAL: Store email in localStorage for OTP page
+        const normalizedEmail = formData.email.trim().toLowerCase();
+        localStorage.setItem('pendingVerificationEmail', normalizedEmail);
+        
+        // Store timestamp for OTP expiration tracking
+        localStorage.setItem('otpSentTimestamp', Date.now().toString());
+        
+        // For development/testing - log OTP if available
+        if (process.env.NODE_ENV === 'development' && response.data.otp) {
+          console.log('📧 Dev OTP:', response.data.otp);
+        }
+        
+        // Navigate to OTP verification page
+        navigate('/otp-verification', {
+          replace: true,
+          state: {
+            email: normalizedEmail,
+            registrationSuccess: true,
+            message: 'Registration successful! Please verify your email.'
+          }
+        });
+        
+      } else {
+        setErrors({ form: response.data.message || 'Registration failed' });
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('Signup error:', error);
@@ -112,12 +159,17 @@ const Login = () => {
       
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
+        if (error.response.data.accountType === 'google') {
+          errorMessage = 'Account exists with Google. Please use Google login.';
+        }
       } else if (error.response?.status === 400) {
         if (error.response.data.message?.includes('already exists')) {
           errorMessage = 'Email already registered. Try logging in instead.';
         } else {
           errorMessage = error.response.data.message;
         }
+      } else if (error.response?.status === 409) {
+        errorMessage = 'Email already registered';
       }
       
       setErrors({ form: errorMessage });
@@ -156,6 +208,7 @@ const Login = () => {
   };
 
   const handleTabChange = (tab) => {
+    console.log('Switching tab to:', tab);
     setActiveTab(tab);
     setErrors({});
     // Reset form data when switching tabs
@@ -292,7 +345,7 @@ const Login = () => {
                         className={`w-full px-4 py-3 rounded-lg border ${
                           errors.firstName ? 'border-red-500' : 'border-gray-300'
                         } focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors`}
-                        placeholder="John"
+                        placeholder="first name"
                       />
                       {errors.firstName && (
                         <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
@@ -310,7 +363,7 @@ const Login = () => {
                         className={`w-full px-4 py-3 rounded-lg border ${
                           errors.lastName ? 'border-red-500' : 'border-gray-300'
                         } focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors`}
-                        placeholder="Doe"
+                        placeholder="last name"
                       />
                       {errors.lastName && (
                         <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>

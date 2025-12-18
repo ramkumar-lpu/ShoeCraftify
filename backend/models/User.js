@@ -1,6 +1,3 @@
-
-//this one is for better enhancements and features for user model with manual login and password reset functionalities
-
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
@@ -32,8 +29,6 @@ const userSchema = new mongoose.Schema({
   },
   
   // Profile image - using URL approach
-
-  
   profilePicture: {
     url: {
       type: String,
@@ -58,19 +53,43 @@ const userSchema = new mongoose.Schema({
   emailVerificationToken: String,
   emailVerificationExpires: Date,
   
+  // OTP fields for verification
+  verificationOTP: {
+    type: String,
+    select: false
+  },
+  verificationOTPExpires: {
+    type: Date,
+    select: false
+  },
+  
   // Password reset fields
   resetPasswordToken: String,
   resetPasswordExpires: Date,
   resetPasswordOTP: String,
   resetPasswordOTPExpires: Date,
   
+  // Registration status
+  registrationStatus: {
+    type: String,
+    enum: ['pending_verification', 'completed', 'active'],
+    default: 'pending_verification'
+  },
+  
   // Account security
   lastPasswordChange: Date,
   failedLoginAttempts: {
     type: Number,
-    default: 0
+    default: 0,
+    select: false
   },
   accountLockedUntil: Date,
+  
+  // Registration info
+  registrationIp: String,
+  userAgent: String,
+  lastLogin: Date,
+  lastLoginIp: String,
   
   // Timestamps
   createdAt: {
@@ -91,6 +110,10 @@ const userSchema = new mongoose.Schema({
     twoFactorEnabled: {
       type: Boolean,
       default: false
+    },
+    loginAlerts: {
+      type: Boolean,
+      default: true
     }
   },
   
@@ -105,7 +128,10 @@ const userSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
-  }
+  },
+  
+  // Email verification timestamp
+  emailVerifiedAt: Date
 }, {
   timestamps: true, // Automatically manages createdAt and updatedAt
   toJSON: { virtuals: true },
@@ -158,18 +184,41 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-// Generate password reset token (for link-based reset)
-userSchema.methods.generatePasswordResetToken = function() {
-  const resetToken = crypto.randomBytes(32).toString('hex');
+// ========== OTP METHODS ==========
+
+// Generate OTP for email verification (for registration)
+userSchema.methods.generateVerificationOTP = function() {
+  // Generate 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
   
-  this.resetPasswordToken = crypto
+  // Hash the OTP before storing
+  this.verificationOTP = crypto
     .createHash('sha256')
-    .update(resetToken)
+    .update(otp)
     .digest('hex');
     
-  this.resetPasswordExpires = Date.now() + 30 * 60 * 1000; // 30 minutes
+  this.verificationOTPExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
   
-  return resetToken;
+  return otp;
+};
+
+// Verify registration OTP
+userSchema.methods.verifyRegistrationOTP = function(candidateOTP) {
+  if (!this.verificationOTP || !this.verificationOTPExpires) {
+    return false;
+  }
+  
+  // Hash the candidate OTP for comparison
+  const hashedCandidateOTP = crypto
+    .createHash('sha256')
+    .update(candidateOTP)
+    .digest('hex');
+    
+  // Check if OTP matches and hasn't expired
+  const isValid = this.verificationOTP === hashedCandidateOTP && 
+                  Date.now() < this.verificationOTPExpires;
+  
+  return isValid;
 };
 
 // Generate OTP for password reset
@@ -187,7 +236,7 @@ userSchema.methods.generateResetOTP = function() {
   return otp;
 };
 
-// Verify OTP
+// Verify OTP for password reset
 userSchema.methods.verifyResetOTP = function(candidateOTP) {
   if (!this.resetPasswordOTP || !this.resetPasswordOTPExpires) {
     return false;
@@ -202,7 +251,9 @@ userSchema.methods.verifyResetOTP = function(candidateOTP) {
          Date.now() < this.resetPasswordOTPExpires;
 };
 
-// Generate email verification token
+// ========== TOKEN METHODS ==========
+
+// Generate email verification token (for link-based verification)
 userSchema.methods.generateEmailVerificationToken = function() {
   const verificationToken = crypto.randomBytes(32).toString('hex');
   
@@ -216,6 +267,20 @@ userSchema.methods.generateEmailVerificationToken = function() {
   return verificationToken;
 };
 
+// Generate password reset token (for link-based reset)
+userSchema.methods.generatePasswordResetToken = function() {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  
+  this.resetPasswordToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+    
+  this.resetPasswordExpires = Date.now() + 30 * 60 * 1000; // 30 minutes
+  
+  return resetToken;
+};
+
 // Clear all reset/verification tokens
 userSchema.methods.clearTokens = function() {
   this.resetPasswordToken = undefined;
@@ -224,7 +289,11 @@ userSchema.methods.clearTokens = function() {
   this.resetPasswordOTPExpires = undefined;
   this.emailVerificationToken = undefined;
   this.emailVerificationExpires = undefined;
+  this.verificationOTP = undefined;
+  this.verificationOTPExpires = undefined;
 };
+
+// ========== ACCOUNT SECURITY METHODS ==========
 
 // Check if account is locked
 userSchema.methods.isAccountLocked = function() {
@@ -248,6 +317,8 @@ userSchema.methods.resetFailedAttempts = function() {
   this.accountLockedUntil = undefined;
 };
 
+// ========== PROFILE METHODS ==========
+
 // Method to update profile picture
 userSchema.methods.updateProfilePicture = function(url, publicId = null) {
   this.profilePicture = {
@@ -257,10 +328,32 @@ userSchema.methods.updateProfilePicture = function(url, publicId = null) {
   };
 };
 
+// ========== STATIC METHODS ==========
+
 // Static method to find by email
 userSchema.statics.findByEmail = function(email) {
   return this.findOne({ email: email.toLowerCase().trim() });
 };
+
+// Static method to find user with verification OTP (for registration)
+userSchema.statics.findByEmailWithVerificationOTP = function(email) {
+  return this.findOne({ email: email.toLowerCase().trim() })
+    .select('+verificationOTP +verificationOTPExpires');
+};
+
+// Static method to find user with password reset OTP
+userSchema.statics.findByEmailWithResetOTP = function(email) {
+  return this.findOne({ email: email.toLowerCase().trim() })
+    .select('+resetPasswordOTP +resetPasswordOTPExpires');
+};
+
+// Static method to find user with security fields
+userSchema.statics.findByEmailWithSecurity = function(email) {
+  return this.findOne({ email: email.toLowerCase().trim() })
+    .select('+password +failedLoginAttempts +accountLockedUntil');
+};
+
+// ========== INDEXES ==========
 
 // Indexes for better query performance
 userSchema.index({ email: 1 });
@@ -268,7 +361,9 @@ userSchema.index({ googleId: 1 });
 userSchema.index({ resetPasswordToken: 1 });
 userSchema.index({ resetPasswordOTP: 1 });
 userSchema.index({ emailVerificationToken: 1 });
+userSchema.index({ verificationOTP: 1 });
 userSchema.index({ accountLockedUntil: 1 });
+userSchema.index({ registrationStatus: 1 });
 
 const User = mongoose.model('User', userSchema);
 

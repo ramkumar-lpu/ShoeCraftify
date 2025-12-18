@@ -5,7 +5,11 @@ import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import cors from 'cors';
 import passport from './config/passport.js'; // Add this
-import authRoutes from './routes/auth.js';   // Add this
+import authRoutes from './routes/auth.js';
+import designRoutes from './routes/designRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
+import contactRoutes from './routes/contactRoutes.js';
 
 // Create Express app
 const app = express();
@@ -35,7 +39,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI,
+    mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/shoecreatify',
     ttl: 24 * 60 * 60
   }),
   cookie: {
@@ -53,6 +57,10 @@ app.use(passport.session());
 // ========== MOUNT ROUTES ==========
 // Add this line to use your auth routes
 app.use('/api/auth', authRoutes);
+app.use('/api/designs', designRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/payment', paymentRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Routes
 app.get('/api/health', (req, res) => {
@@ -78,9 +86,10 @@ app.use((err, req, res, next) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`\n🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📊 Database: ${mongoose.connection.db?.databaseName || 'Connecting...'}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
+  //console.log(`📊 Database: ${mongoose.connection.db?.databaseName || 'Connecting...'}`);
   console.log(`🔗 Google Auth: http://localhost:${PORT}/api/auth/google`);
-  console.log(`🔗 Current User: http://localhost:${PORT}/api/auth/user`);
   console.log(`\nPress Ctrl+C to stop\n`);
 });
+
+
+//idhar wala code pahle ka working code me razorpay payment gateway integration krna hai
