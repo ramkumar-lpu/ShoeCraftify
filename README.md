@@ -197,6 +197,10 @@ ShoeCraftify/
 └── README.md             # Project documentation
 ```
 
+
+
+<img width="962" height="649" alt="image" src="https://github.com/user-attachments/assets/9ad328f8-11ef-4055-adce-ed608a805467" />
+
 ## 🤝 Contributing
 
 We welcome contributions from the community! Here's how you can help:
