@@ -6,22 +6,14 @@ import nodemailer from 'nodemailer';
 console.log('📧 Email service initializing...');
 
 // Create transporter with real Gmail credentials
-// const transporter = nodemailer.createTransport({
-//   service: 'gmail',
-//   auth: {
-//     user: process.env.EMAIL_USER,
-//     pass: process.env.EMAIL_PASSWORD
-//   }
-// });
 const transporter = nodemailer.createTransport({
-  host: "smtp-relay.brevo.com",
-  port: 587,
-  secure: false,
+  service: 'gmail',
   auth: {
-    user: "apikey",
-    pass: process.env.BREVO_API_KEY,
-  },
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD
+  }
 });
+
 
 // Test transporter connection
 transporter.verify((error) => {
