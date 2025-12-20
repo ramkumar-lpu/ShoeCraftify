@@ -72,24 +72,33 @@ const validateConfig = () => {
 };
 
 // Create transporter with enhanced configuration
-const createTransporter = () => {
-    validateConfig();
+// const createTransporter = () => {
+//     validateConfig();
 
-    return nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false, // true for 465, false for other ports
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASSWORD
-        },
-        pool: true, // Use connection pooling
-        maxConnections: 5,// Limit number of connections
-        maxMessages: 100,
-        rateDelta: 1000,
-        rateLimit: 5 // 5 emails per second
-    });
-};
+//     return nodemailer.createTransport({
+//         host: 'smtp.gmail.com',
+//         port: 587,
+//         secure: false, // true for 465, false for other ports
+//         auth: {
+//             user: process.env.EMAIL_USER,
+//             pass: process.env.EMAIL_PASSWORD
+//         },
+//         pool: true, // Use connection pooling
+//         maxConnections: 5,// Limit number of connections
+//         maxMessages: 100,
+//         rateDelta: 1000,
+//         rateLimit: 5 // 5 emails per second
+//     });
+// };
+const transporter = nodemailer.createTransport({
+  host: "smtp-relay.brevo.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: "apikey",
+    pass: process.env.BREVO_API_KEY,
+  },
+}); 
 
 // Verify transporter connection
 const verifyTransporter = async () => {
