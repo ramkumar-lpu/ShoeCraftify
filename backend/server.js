@@ -33,6 +33,19 @@ app.use(cors({
   credentials: true
 }));//that mesns that frontend can send cookies to backend or we can say that only this frontend url is allowed to fetch the backend api s with credentials like cookies
 
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'ShoeCreatify Backend API is running',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/api/auth',
+      users: '/api/users',
+      shoes: '/api/shoes',
+      orders: '/api/orders'
+    }
+  });
+});
 // Session
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key',
