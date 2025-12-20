@@ -2,11 +2,40 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import User from '../models/User.js';
 
-// No need to connect MongoDB here - it will be connected in server.js
+// Validate environment variables before setting up passport
+const validateGoogleConfig = () => {
+  const missingVars = [];
+  
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    missingVars.push('GOOGLE_CLIENT_ID');
+  }
+  
+  if (!process.env.GOOGLE_CLIENT_SECRET) {
+    missingVars.push('GOOGLE_CLIENT_SECRET');
+  }
+  
+  if (missingVars.length > 0) {
+    throw new Error(
+      `Missing required Google OAuth environment variables: ${missingVars.join(', ')}\n` +
+      'Please add them to your .env file or environment configuration.'
+    );
+  }
+};
+
+try {
+  validateGoogleConfig();
+} catch (error) {
+  console.error('❌ Google OAuth Configuration Error:', error.message);
+  
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
+  }
+}
+
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: '/api/auth/google/callback', // Updated to match your routes
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback',
     scope: ['profile', 'email']
   },
   async (accessToken, refreshToken, profile, done) => {
@@ -83,6 +112,9 @@ passport.use(new GoogleStrategy({
 
 // Serialize user to session (store user id)
 passport.serializeUser((user, done) => {
+  if (!user) {
+    return done(new Error('User is null'));
+  }
   done(null, user._id);
 });
 
@@ -92,6 +124,7 @@ passport.deserializeUser(async (id, done) => {
     const user = await User.findById(id);
     done(null, user);
   } catch (error) {
+    console.error('❌ Deserialize Error:', error);
     done(error, null);
   }
 });
