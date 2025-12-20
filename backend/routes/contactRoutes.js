@@ -90,7 +90,7 @@ const validateConfig = () => {
 //         rateLimit: 5 // 5 emails per second
 //     });
 // };
-const transporter = nodemailer.createTransport({
+const createTransporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
   port: 587,
   secure: false,
