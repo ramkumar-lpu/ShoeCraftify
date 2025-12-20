@@ -17,9 +17,9 @@ const PORT = process.env.PORT || 5000;
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/shoecreatify')
-  .then(() => console.log('✅ MongoDB Connected'))
+  .then(() => console.log(' MongoDB Connected'))
   .catch(err => {
-    console.error('❌ MongoDB Connection Error:', err.message);
+    console.error(' MongoDB Connection Error:', err.message);
     process.exit(1);
   });
 
@@ -31,7 +31,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true
-}));
+}));//that mesns that frontend can send cookies to backend or we can say that only this frontend url is allowed to fetch the backend api s with credentials like cookies
 
 // Session
 app.use(session({
@@ -40,10 +40,10 @@ app.use(session({
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/shoecreatify',
-    ttl: 24 * 60 * 60
+    ttl: 24 * 60 * 60// 1 day
   }),
   cookie: {
-    maxAge: 24 * 60 * 60 * 1000,
+    maxAge: 24 * 60 * 60 * 1000,// 1 day
     httpOnly: true,
     secure: false,
     sameSite: 'lax'
@@ -54,7 +54,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// ========== MOUNT ROUTES ==========
+// ==========  ROUTES ==========
 // Add this line to use your auth routes
 app.use('/api/auth', authRoutes);
 app.use('/api/designs', designRoutes);
@@ -62,7 +62,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/contact', contactRoutes);
 
-// Routes
+// Routes for testing and health check
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
@@ -72,11 +72,6 @@ app.get('/api/health', (req, res) => {
     authRoutes: true  // Add this to confirm auth routes are loaded
   });
 });
-
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Test endpoint works!' });
-});
-
 // Error handling
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -85,11 +80,7 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`\n🚀 Server running on http://localhost:${PORT}`);
-  //console.log(`📊 Database: ${mongoose.connection.db?.databaseName || 'Connecting...'}`);
-  console.log(`🔗 Google Auth: http://localhost:${PORT}/api/auth/google`);
-  console.log(`\nPress Ctrl+C to stop\n`);
+  console.log(`\n Server running on http://localhost:${PORT}`);
+  //console.log(` Google Auth: http://localhost:${PORT}/api/auth/google`);
+  //console.log(`\nPress Ctrl+C to stop\n`);
 });
-
-
-//idhar wala code pahle ka working code me razorpay payment gateway integration krna hai

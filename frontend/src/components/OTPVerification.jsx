@@ -198,15 +198,10 @@ const OTPVerification = () => {
 
         console.log('🔄 Redirecting to:', redirectTo);
 
-        // Navigate immediately
-        navigate(redirectTo, {
-          replace: true,
-          state: {
-            message: successMessage,
-            type: 'success',
-            email: response.data.user?.email || email
-          }
-        });
+        // Force a full reload so App re-checks auth (session now set)
+        // Store a flash message hint for post-redirect UX (optional)
+        try { localStorage.setItem('flashMessage', JSON.stringify({ type: 'success', text: successMessage })); } catch {}
+        window.location.replace(redirectTo);
 
       } else {
         // Handle backend failure

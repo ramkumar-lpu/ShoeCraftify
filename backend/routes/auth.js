@@ -1,8 +1,8 @@
 import express from 'express';
-import passport from 'passport';
-import rateLimit from 'express-rate-limit';
-import validator from 'validator';
-import crypto from 'crypto';
+import passport from 'passport';//for google authentication
+import rateLimit from 'express-rate-limit';//i have used express-rate-limit package for rate limiting
+import validator from 'validator';//for input validation
+import crypto from 'crypto';//used for generating secure random tokens
 import User from '../models/User.js';
 import { 
   sendPasswordResetOTPEmail, 
@@ -25,6 +25,7 @@ const authLimiter = rateLimit({
   skipSuccessfulRequests: true
 });
 
+// Separate limiters for OTP-related routes
 const otpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 3,
@@ -33,7 +34,7 @@ const otpLimiter = rateLimit({
     message: 'Too many OTP requests. Please try again later.'
   }
 });
-
+// Limiter for OTP verification attempts
 const otpVerifyLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
   max: 5,
@@ -42,7 +43,7 @@ const otpVerifyLimiter = rateLimit({
     message: 'Too many verification attempts. Please request a new OTP.'
   }
 });
-
+// Limiter for registration OTP requests
 const registrationOTPLimiter = rateLimit({
   windowMs: 30 * 60 * 1000,
   max: 5,
@@ -58,15 +59,15 @@ const validateRegisterInput = (req, res, next) => {
   
   const errors = [];
   
-  if (!firstName || firstName.trim().length < 2) {
-    errors.push('First name must be at least 2 characters');
+  if (!firstName || firstName.trim().length < 3) {
+    errors.push('First name must be at least 3 characters');
   }
   
-  if (!lastName || lastName.trim().length < 2) {
-    errors.push('Last name must be at least 2 characters');
+  if (!lastName || lastName.trim().length < 3) {
+    errors.push('Last name must be at least 3 characters');
   }
   
-  if (!email || !validator.isEmail(email)) {
+  if (!email || !validator.isEmail(email) || email.length > 100 || validator.isDisposableEmail(email)) {
     errors.push('Valid email is required');
   }
   
@@ -85,10 +86,11 @@ const validateRegisterInput = (req, res, next) => {
   next();
 };
 
+// Login input validation
 const validateLoginInput = (req, res, next) => {
   const { email, password } = req.body;
   
-  if (!email || !validator.isEmail(email)) {
+  if (!email || !validator.isEmail(email) ||validator.isDisposableEmail(email)) {
     return res.status(400).json({
       success: false,
       message: 'Valid email is required'
@@ -112,7 +114,7 @@ router.get('/google',
     prompt: 'select_account'
   })
 );
-
+// Google OAuth callback
 router.get('/google/callback',
   passport.authenticate('google', { 
     failureRedirect: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=auth_failed`,
@@ -130,7 +132,7 @@ router.post('/register', registrationOTPLimiter, validateRegisterInput, async (r
   try {
     const { firstName, lastName, email, password } = req.body;
     
-    console.log('📝 Registration attempt for:', email);
+    console.log(' Registration attempt for:', email);
     
     const normalizedEmail = validator.normalizeEmail(email);
     
@@ -156,8 +158,8 @@ router.post('/register', registrationOTPLimiter, validateRegisterInput, async (r
       }
       
       // Delete unverified user
-      console.log('🗑️ Deleting unverified user:', existingUser._id);
-      await User.deleteOne({ _id: existingUser._id });
+      console.log(' Deleting unverified user:', existingUser._id);
+      await User.deleteOne({ _id: existingUser._id });//delete unverified user to allow fresh registration
     }
     
     // Create new user
@@ -175,12 +177,12 @@ router.post('/register', registrationOTPLimiter, validateRegisterInput, async (r
     
     // Generate OTP
     const otp = user.generateVerificationOTP();
-    console.log('🔐 Generated OTP for user:', user._id);
+    console.log(' Generated OTP for user:', user._id);
     
     await user.save();
     
     // Send verification email
-    console.log('📧 Sending verification email to:', normalizedEmail);
+    console.log(' Sending verification email to:', normalizedEmail);
     await sendVerificationOTPEmail(user, otp);
     
     res.status(201).json({
@@ -191,7 +193,7 @@ router.post('/register', registrationOTPLimiter, validateRegisterInput, async (r
     });
     
   } catch (error) {
-    console.error('❌ Registration error:', error);
+    console.error(' Registration error:', error);
     
     if (error.code === 11000) {
       return res.status(409).json({
@@ -207,23 +209,19 @@ router.post('/register', registrationOTPLimiter, validateRegisterInput, async (r
   }
 });
 
-// STEP 2: Verify OTP and activate account - SIMPLIFIED VERSION
+// STEP 2: Verify OTP and activate account 
 router.post('/verify-registration-otp', otpVerifyLimiter, async (req, res) => {
-  console.log('🔍 OTP verification request received');
+  console.log(' OTP verification request received');
   
   try {
     const { email, otp } = req.body;
-    
-    console.log('📧 Email:', email, 'OTP length:', otp?.length);
-    
     if (!email || !validator.isEmail(email) || !otp || otp.length !== 6) {
-      console.log('❌ Invalid input');
+      console.log(' Invalid input');
       return res.status(400).json({
         success: false,
         message: 'Valid email and 6-digit OTP are required'
       });
     }
-    
     const normalizedEmail = validator.normalizeEmail(email);
     
     // CRITICAL: Select OTP fields since they're marked select: false
@@ -235,26 +233,24 @@ router.post('/verify-registration-otp', otpVerifyLimiter, async (req, res) => {
     console.log('👤 User found:', user ? 'Yes' : 'No');
     
     if (!user) {
-      console.log('❌ No pending registration found');
+      console.log(' No pending registration found');
       return res.status(404).json({
         success: false,
         message: 'No pending registration found. Please register again.'
       });
     }
-    
     // Verify OTP
-    console.log('🔐 Verifying OTP...');
+    console.log(' Verifying OTP...');
     const isValidOTP = user.verifyRegistrationOTP(otp);
     
     if (!isValidOTP) {
-      console.log('❌ Invalid OTP');
+      console.log(' Invalid OTP');
       return res.status(400).json({
         success: false,
         message: 'Invalid or expired OTP'
       });
     }
-    
-    console.log('✅ OTP verified successfully');
+    console.log(' OTP verified successfully');
     
     // Activate user
     user.isEmailVerified = true;
@@ -270,23 +266,33 @@ router.post('/verify-registration-otp', otpVerifyLimiter, async (req, res) => {
     // Send welcome email
     sendWelcomeEmail(user).catch(err => console.error('Email error:', err));
     
-    // SIMPLIFIED: Always redirect to profile, let frontend handle login
-    res.json({
-      success: true,
-      message: 'Email verified successfully! Redirecting to profile...',
-      redirectTo: '/profile',
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        fullName: user.fullName,
-        isEmailVerified: user.isEmailVerified
+    // Log the user in after successful verification to establish session
+    req.login(user, (err) => {
+      if (err) {
+        console.error(' Error logging in post-verification:', err);
+        return res.status(500).json({
+          success: false,
+          message: 'Verified, but failed to start session. Please log in.'
+        });
       }
+
+      return res.json({
+        success: true,
+        message: 'Email verified successfully! Redirecting to profile...',
+        redirectTo: '/profile',
+        user: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          fullName: user.fullName,
+          isEmailVerified: user.isEmailVerified
+        }
+      });
     });
     
   } catch (error) {
-    console.error('❌ OTP verification error:', error);
+    console.error(' OTP verification error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to verify OTP. Please try again.'
@@ -296,12 +302,12 @@ router.post('/verify-registration-otp', otpVerifyLimiter, async (req, res) => {
 
 // STEP 3: Resend OTP
 router.post('/resend-registration-otp', registrationOTPLimiter, async (req, res) => {
-  console.log('🔄 Resend OTP request');
+  console.log(' Resend OTP request');
   
   try {
     const { email } = req.body;
     
-    if (!email || !validator.isEmail(email)) {
+    if (!email || !validator.isEmail(email) || validator.isDisposableEmail(email)) {
       return res.status(400).json({
         success: false,
         message: 'Valid email is required'
@@ -325,7 +331,7 @@ router.post('/resend-registration-otp', registrationOTPLimiter, async (req, res)
     const otp = user.generateVerificationOTP();
     await user.save();
     
-    console.log('📧 Sending new OTP to:', normalizedEmail);
+    console.log(' Sending new OTP to:', normalizedEmail);
     await sendVerificationOTPEmail(user, otp);
     
     res.json({
@@ -335,7 +341,7 @@ router.post('/resend-registration-otp', registrationOTPLimiter, async (req, res)
     });
     
   } catch (error) {
-    console.error('❌ Resend OTP error:', error);
+    console.error(' Resend OTP error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to resend OTP. Please try again.'
@@ -402,9 +408,9 @@ router.post('/login', authLimiter, validateLoginInput, async (req, res, next) =>
     user.lastLoginIp = req.ip;
     await user.save();
     
-    // Configure session
+    // Configure session to persist if "Remember Me" is checked
     if (rememberMe && req.session) {
-      req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
+      req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;// 30 days
     }
     
     // Log user in
@@ -422,7 +428,9 @@ router.post('/login', authLimiter, validateLoginInput, async (req, res, next) =>
           timestamp: new Date()
         }).catch(console.error);
       }
+      res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/profile?login=success`);
       
+      // Respond with user info
       res.json({
         success: true,
         message: 'Login successful',
@@ -454,7 +462,7 @@ router.post('/forgot-password', otpLimiter, async (req, res) => {
   try {
     const { email } = req.body;
     
-    if (!email || !validator.isEmail(email)) {
+    if (!email || !validator.isEmail(email) || validator.isDisposableEmail(email)) {
       return res.status(400).json({
         success: false,
         message: 'Valid email is required'
@@ -612,7 +620,7 @@ router.post('/reset-password', async (req, res) => {
     
     await user.save();
     
-    await sendPasswordChangedEmail(user);
+    await sendPasswordChangedEmail(user);//notify user of password change
     
     res.json({
       success: true,
@@ -663,10 +671,10 @@ router.post('/logout', (req, res) => {
         message: 'Logout failed'
       });
     }
-    
+    // Destroy session and clear cookie using here express-session's destroy method
     req.session.destroy((err) => {
       if (err) console.error('Session destroy error:', err);
-      
+      // Clear cookie
       res.clearCookie('connect.sid', {
         path: '/',
         httpOnly: true,

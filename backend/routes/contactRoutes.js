@@ -84,7 +84,7 @@ const createTransporter = () => {
             pass: process.env.EMAIL_PASSWORD
         },
         pool: true, // Use connection pooling
-        maxConnections: 5,
+        maxConnections: 5,// Limit number of connections
         maxMessages: 100,
         rateDelta: 1000,
         rateLimit: 5 // 5 emails per second
