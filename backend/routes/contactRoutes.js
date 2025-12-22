@@ -1,7 +1,7 @@
 import express from 'express';
 import nodemailer from 'nodemailer';
-import Joi from 'joi'; // Add joi for validation: npm install joi
-import rateLimit from 'express-rate-limit'; // npm install express-rate-limit
+import { body, validationResult } from 'express-validator'; 
+import rateLimit from 'express-rate-limit';
 
 const router = express.Router();
 
@@ -14,52 +14,53 @@ const contactLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-// Input validation schema
-const contactSchema = Joi.object({
-    name: Joi.string()
-        .min(2)
-        .max(100)
-        .pattern(/^[a-zA-Z\s\-'.]+$/)
-        .required()
-        .messages({
-            'string.pattern.base': 'Name can only contain letters, spaces, hyphens, apostrophes, and periods',
-            'string.min': 'Name must be at least 2 characters long',
-            'string.max': 'Name cannot exceed 100 characters'
-        }),
-    email: Joi.string()
-        .email({ minDomainSegments: 2, tlds: { allow: true } })
-        .required()
-        .messages({
-            'string.email': 'Please provide a valid email address'
-        }),
-    subject: Joi.string()
-        .min(5)
-        .max(200)
-        .required()
-        .messages({
-            'string.min': 'Subject must be at least 5 characters long',
-            'string.max': 'Subject cannot exceed 200 characters'
-        }),
-    message: Joi.string()
-        .min(10)
-        .max(5000)
-        .required()
-        .messages({
-            'string.min': 'Message must be at least 10 characters long',
-            'string.max': 'Message cannot exceed 5000 characters'
-        }),
-    contactType: Joi.string()
-        .valid('general', 'support', 'business', 'feedback', 'technical')
+// Input validation using express-validator (removed recaptchaToken)
+const contactValidationRules = [
+    body('name')
+        .trim()
+        .notEmpty().withMessage('Name is required')
+        .isLength({ min: 2, max: 100 }).withMessage('Name must be between 2 and 100 characters')
+        .matches(/^[a-zA-Z\s\-'.]+$/).withMessage('Name can only contain letters, spaces, hyphens, apostrophes, and periods'),
+    
+    body('email')
+        .trim()
+        .notEmpty().withMessage('Email is required')
+        .isEmail().withMessage('Please provide a valid email address')
+        .normalizeEmail(),
+    
+    body('subject')
+        .trim()
+        .notEmpty().withMessage('Subject is required')
+        .isLength({ min: 5, max: 200 }).withMessage('Subject must be between 5 and 200 characters'),
+    
+    body('message')
+        .trim()
+        .notEmpty().withMessage('Message is required')
+        .isLength({ min: 10, max: 5000 }).withMessage('Message must be between 10 and 5000 characters'),
+    
+    body('contactType')
+        .optional()
+        .isIn(['general', 'support', 'business', 'feedback', 'technical'])
+        .withMessage('Invalid contact type')
         .default('general'),
-    toEmail: Joi.string()
-        .email()
-        .optional(),
-    replyTo: Joi.string()
-        .email()
-        .optional(),
-    recaptchaToken: Joi.string()
-        .optional() // Add reCAPTCHA support
-});
+    
+    body('toEmail')
+        .optional()
+        .isEmail().withMessage('Invalid recipient email address'),
+    
+    body('replyTo')
+        .optional()
+        .isEmail().withMessage('Invalid reply-to email address')
+];
+
+// Custom sanitization middleware
+const sanitizeInput = (req, res, next) => {
+    if (req.body.name) req.body.name = req.body.name.trim();
+    if (req.body.subject) req.body.subject = req.body.subject.trim();
+    if (req.body.message) req.body.message = req.body.message.trim();
+    if (req.body.email) req.body.email = req.body.email.trim().toLowerCase();
+    next();
+};
 
 // Validate environment variables
 const validateConfig = () => {
@@ -96,7 +97,6 @@ const verifyTransporter = async () => {
     const transporter = createTransporter();
     try {
         await transporter.verify();
-        console.log('Email transporter is ready');
         return transporter;
     } catch (error) {
         console.error('Failed to create email transporter:', error);
@@ -116,31 +116,8 @@ let transporter;
     }
 })();
 
-// Helper function to validate reCAPTCHA (optional)
-const validateRecaptcha = async (token) => {
-    if (!process.env.RECAPTCHA_SECRET_KEY) {
-        return true; // Skip if not configured
-    }
-
-    try {
-        const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`
-        });
-
-        const data = await response.json();
-        return data.success && data.score >= 0.5; // Adjust threshold as needed
-    } catch (error) {
-        console.error('reCAPTCHA validation error:', error);
-        return false;
-    }
-};
-
-// Helper function to sanitize input
-const sanitizeInput = (input) => {
+// Helper function to sanitize HTML
+const sanitizeHTML = (input) => {
     if (typeof input !== 'string') return input;
 
     // Basic HTML entity escaping
@@ -168,42 +145,62 @@ const formatContactType = (type) => {
     return types[type] || 'General Inquiry';
 };
 
-router.post('/send', contactLimiter, async (req, res) => {
-    try {
-        // Validate input
-        const { error, value } = contactSchema.validate(req.body, {
-            abortEarly: false,
-            stripUnknown: true
-        });
+// Format validation errors
+const formatValidationErrors = (errors) => {
+    return errors.array().map(error => ({
+        field: error.path,
+        message: error.msg
+    }));
+};
 
-        if (error) {
+// Timestamp helper functions
+const formatTimestamp = (date = new Date()) => {
+    return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        weekday: 'long',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+        timeZoneName: 'short'
+    });
+};
+
+const formatDateISO = (date = new Date()) => {
+    return date.toISOString();
+};
+
+const formatDateForEmail = (date = new Date()) => {
+    return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    });
+};
+
+router.post('/send', contactLimiter, sanitizeInput, contactValidationRules, async (req, res) => {
+    try {
+        // Check for validation errors
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
             return res.status(400).json({
                 success: false,
                 message: 'Validation failed',
-                errors: error.details.map(detail => ({
-                    field: detail.path[0],
-                    message: detail.message
-                }))
+                errors: formatValidationErrors(errors)
             });
         }
 
-        const { name, email, subject, message, contactType, toEmail, replyTo, recaptchaToken } = value;
+        const { name, email, subject, message, contactType, toEmail, replyTo } = req.body;
 
-        // Validate reCAPTCHA if configured
-        if (process.env.RECAPTCHA_SECRET_KEY) {
-            const isValidCaptcha = await validateRecaptcha(recaptchaToken);
-            if (!isValidCaptcha) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'reCAPTCHA verification failed'
-                });
-            }
-        }
-
-        // Sanitize inputs
-        const sanitizedName = sanitizeInput(name);
-        const sanitizedSubject = sanitizeInput(subject);
-        const sanitizedMessage = sanitizeInput(message);
+        // Sanitize inputs for HTML content
+        const sanitizedName = sanitizeHTML(name);
+        const sanitizedSubject = sanitizeHTML(subject);
+        const sanitizedMessage = sanitizeHTML(message);
         const formattedContactType = formatContactType(contactType);
 
         // Check if transporter is available
@@ -213,30 +210,8 @@ router.post('/send', contactLimiter, async (req, res) => {
             });
         }
 
-        // Prepare email options
-        const mailOptions = {
-            from: {
-                name: process.env.EMAIL_FROM_NAME || 'ShoeCreatify Contact Form',
-                address: process.env.EMAIL_USER
-            },
-            to: toEmail || process.env.ADMIN_EMAIL || process.env.EMAIL_USER,
-            replyTo: replyTo || email,
-            subject: `[ShoeCreatify Contact] ${formattedContactType}: ${sanitizedSubject}`,
-            text: `
-CONTACT FORM SUBMISSION
-=======================
-Date: ${new Date().toISOString()}
-Name: ${sanitizedName}
-Email: ${email}
-Inquiry Type: ${formattedContactType}
-
-MESSAGE:
-${sanitizedMessage}
-
----
-This message was sent via the ShoeCreatify contact form.
-            `.trim(),
-            html: `
+        // Create the HTML template without the info reference in the footer
+        const htmlTemplate = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -252,7 +227,11 @@ This message was sent via the ShoeCreatify contact form.
         .field-label { font-weight: bold; color: #4F46E5; }
         .message-box { background-color: white; padding: 20px; border-radius: 5px; border-left: 4px solid #4F46E5; margin: 20px 0; }
         .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px; }
-        .badge { display: inline-block; background-color: #4F46E5; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin-left: 10px; }
+        .timestamp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; margin-bottom: 20px; background: white; padding: 15px; border-radius: 5px; border: 1px solid #e5e7eb; }
+        .timestamp-item { margin-bottom: 5px; }
+        .timestamp-label { font-weight: 600; color: #6b7280; font-size: 0.9em; }
+        .timestamp-value { color: #111827; }
+        .utc-badge { background-color: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; font-family: monospace; }
     </style>
 </head>
 <body>
@@ -262,9 +241,21 @@ This message was sent via the ShoeCreatify contact form.
             <p>ShoeCreatify Contact Form</p>
         </div>
         <div class="content">
-            <div class="field">
-                <span class="field-label">Date:</span> ${new Date().toLocaleString()}
+            <div class="timestamp-grid">
+                <div class="timestamp-item">
+                    <div class="timestamp-label">Local Date & Time</div>
+                    <div class="timestamp-value">${formatDateForEmail()}</div>
+                </div>
+                <div class="timestamp-item">
+                    <div class="timestamp-label">Full Timestamp</div>
+                    <div class="timestamp-value">${formatTimestamp()}</div>
+                </div>
+                <div class="timestamp-item">
+                    <div class="timestamp-label">UTC Reference</div>
+                    <div class="utc-badge">${formatDateISO()}</div>
+                </div>
             </div>
+            
             <div class="field">
                 <span class="field-label">Name:</span> ${sanitizedName}
             </div>
@@ -288,14 +279,44 @@ This message was sent via the ShoeCreatify contact form.
             </div>
             
             <div class="footer">
-                <p>This message was sent via the ShoeCreatify contact form at ${new Date().toISOString()}.</p>
-                <p>You can reply directly to this email to contact the sender.</p>
+                <p>📧 This message was generated by ShoeCreatify Contact Form System</p>
+                <p>🕒 Server processed at: ${formatDateISO()}</p>
+                <p>⚠️ This is an automated message. Do not reply to this email address.</p>
             </div>
         </div>
     </div>
 </body>
 </html>
+        `.trim();
+
+        // Prepare email options
+        const mailOptions = {
+            from: {
+                name: process.env.EMAIL_FROM_NAME || 'ShoeCreatify Contact Form',
+                address: process.env.EMAIL_USER
+            },
+            to: toEmail || process.env.ADMIN_EMAIL || process.env.EMAIL_USER,
+            replyTo: replyTo || email,
+            subject: `[ShoeCreatify Contact] ${formattedContactType}: ${sanitizedSubject}`,
+            text: `
+CONTACT FORM SUBMISSION
+=======================
+Timestamp: ${formatTimestamp()}
+Local Time: ${formatDateForEmail()}
+UTC Reference: ${formatDateISO()}
+
+Name: ${sanitizedName}
+Email: ${email}
+Inquiry Type: ${formattedContactType}
+
+MESSAGE:
+${sanitizedMessage}
+
+---
+This message was sent via the ShoeCreatify contact form.
+Generated at: ${formatDateISO()}
             `.trim(),
+            html: htmlTemplate,
             // Add headers for better email client compatibility
             headers: {
                 'X-Priority': '1',
@@ -313,10 +334,10 @@ This message was sent via the ShoeCreatify contact form.
 
         const info = await Promise.race([emailPromise, timeoutPromise]);
 
-        // Log successful send (consider using a proper logger)
+        // Log successful send
         console.log('Email sent successfully:', {
             messageId: info.messageId,
-            timestamp: new Date().toISOString(),
+            timestamp: formatDateISO(),
             to: mailOptions.to,
             subject: mailOptions.subject,
             contactType: contactType,
@@ -327,14 +348,15 @@ This message was sent via the ShoeCreatify contact form.
         res.json({
             success: true,
             message: 'Email sent successfully',
-            messageId: info.messageId
+            messageId: info.messageId,
+            timestamp: formatDateISO()
         });
 
     } catch (error) {
         console.error('Error sending email:', {
             error: error.message,
             stack: error.stack,
-            timestamp: new Date().toISOString(),
+            timestamp: formatDateISO(),
             ip: req.ip,
             endpoint: '/contact/send'
         });
@@ -357,7 +379,8 @@ This message was sent via the ShoeCreatify contact form.
         res.status(statusCode).json({
             success: false,
             message: userMessage,
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+            timestamp: formatDateISO()
         });
     }
 });
@@ -370,13 +393,16 @@ router.get('/health', async (req, res) => {
             res.json({
                 status: 'healthy',
                 service: 'email',
-                timestamp: new Date().toISOString()
+                timestamp: formatDateISO(),
+                serverTime: formatTimestamp(),
+                uptime: process.uptime()
             });
         } else {
             res.status(503).json({
                 status: 'unavailable',
                 service: 'email',
-                timestamp: new Date().toISOString()
+                timestamp: formatDateISO(),
+                serverTime: formatTimestamp()
             });
         }
     } catch (error) {
@@ -384,7 +410,8 @@ router.get('/health', async (req, res) => {
             status: 'unhealthy',
             service: 'email',
             error: error.message,
-            timestamp: new Date().toISOString()
+            timestamp: formatDateISO(),
+            serverTime: formatTimestamp()
         });
     }
 });

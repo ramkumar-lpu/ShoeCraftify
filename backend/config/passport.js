@@ -1,19 +1,18 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import User from '../models/User.js';
-
-// No need to connect MongoDB here - it will be connected in server.js
+// Configure Google OAuth Strategy for Passport
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: '/api/auth/google/callback', // Updated to match your routes
+    callbackURL: '/api/auth/google/callback', 
     scope: ['profile', 'email']
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
-      console.log('📨 Google Profile Received:', profile.id);
+      console.log(' Google Profile Received:', profile.id);
       
-      // Try find by googleId first
+      // Try find by googleId first 
       let user = await User.findOne({ googleId: profile.id });
       
       if (!user && profile.emails && profile.emails.length) {
@@ -35,7 +34,7 @@ passport.use(new GoogleStrategy({
           photos: profile.photos || []
         });
         
-        console.log('✅ New user created:', user.email);
+        console.log(' New user created:', user.email);
       } else {
         // Update existing user if needed
         let changed = false;
@@ -67,15 +66,15 @@ passport.use(new GoogleStrategy({
         
         if (changed) {
           await user.save();
-          console.log('✅ User updated:', user.email);
+          console.log(' User updated:', user.email);
         } else {
-          console.log('✅ Existing user found:', user.email);
+          console.log(' Existing user found:', user.email);
         }
       }
       
       return done(null, user);
     } catch (error) {
-      console.error('❌ Passport Error:', error);
+      console.error(' Passport Error:', error);
       return done(error, null);
     }
   }

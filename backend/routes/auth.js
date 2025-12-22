@@ -67,7 +67,7 @@ const validateRegisterInput = (req, res, next) => {
     errors.push('Last name must be at least 3 characters');
   }
   
-  if (!email || !validator.isEmail(email) || email.length > 100 || validator.isDisposableEmail(email)) {
+  if (!email || !validator.isEmail(email) || email.length > 100 ) {
     errors.push('Valid email is required');
   }
   
@@ -90,7 +90,7 @@ const validateRegisterInput = (req, res, next) => {
 const validateLoginInput = (req, res, next) => {
   const { email, password } = req.body;
   
-  if (!email || !validator.isEmail(email) ||validator.isDisposableEmail(email)) {
+  if (!email || !validator.isEmail(email) || email.length > 100 ) {
     return res.status(400).json({
       success: false,
       message: 'Valid email is required'
@@ -307,7 +307,7 @@ router.post('/resend-registration-otp', registrationOTPLimiter, async (req, res)
   try {
     const { email } = req.body;
     
-    if (!email || !validator.isEmail(email) || validator.isDisposableEmail(email)) {
+    if (!email || !validator.isEmail(email) ) {
       return res.status(400).json({
         success: false,
         message: 'Valid email is required'
@@ -462,7 +462,7 @@ router.post('/forgot-password', otpLimiter, async (req, res) => {
   try {
     const { email } = req.body;
     
-    if (!email || !validator.isEmail(email) || validator.isDisposableEmail(email)) {
+    if (!email || !validator.isEmail(email) || email.length > 100 ) {
       return res.status(400).json({
         success: false,
         message: 'Valid email is required'

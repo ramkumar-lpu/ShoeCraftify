@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import cors from 'cors';
-import passport from './config/passport.js'; // Add this
+import passport from './config/passport.js'; 
 import authRoutes from './routes/auth.js';
 import designRoutes from './routes/designRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
@@ -94,6 +94,4 @@ app.use((err, req, res, next) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`\n Server running on http://localhost:${PORT}`);
-  //console.log(` Google Auth: http://localhost:${PORT}/api/auth/google`);
-  //console.log(`\nPress Ctrl+C to stop\n`);
 });

@@ -1,9 +1,6 @@
-
-
-
 import nodemailer from 'nodemailer';
 
-console.log('📧 Email service initializing...');
+console.log(' Email service initializing...');
 
 // Create transporter with real Gmail credentials
 const transporter = nodemailer.createTransport({
@@ -13,17 +10,14 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASSWORD
   }
 });
-
-
 // Test transporter connection
 transporter.verify((error) => {
   if (error) {
-    console.error('❌ Email connection failed:', error.message);
-    console.log('ℹ️  Please check your EMAIL_USER and EMAIL_PASSWORD in .env file');
-    console.log('ℹ️  Make sure you are using App Password, not regular password');
+    console.error(' Email connection failed:', error.message);
+    console.log(' Please check your EMAIL_USER and EMAIL_PASSWORD in .env file');
+    console.log(' Please make sure you are using App Password, not regular password');
   } else {
-    console.log('✅ Email server connected successfully');
-   // console.log(`📧 Sender: ${process.env.EMAIL_USER}`);
+    console.log(' Email server connected successfully');
   }
 });
 
@@ -39,10 +33,10 @@ const sendEmail = async (to, subject, html, text = '') => {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Email sent to ${to} (Message ID: ${info.messageId})`);
+    console.log(` Email sent to ${to} (Message ID: ${info.messageId})`);
     return { success: true, info };
   } catch (error) {
-    console.error(`❌ Failed to send email to ${to}:`, error.message);
+    console.error(` Failed to send email to ${to}:`, error.message);
     // Don't throw error - just log and continue
     return { success: false, error: error.message };
   }
@@ -342,6 +336,9 @@ export const sendWelcomeEmail = async (user) => {
           <p style="color: #0369a1; margin: 0; font-size: 16px; font-weight: 500;">
             Ready to start designing? 
             <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/login" style="color: #8b5cf6; text-decoration: none; font-weight: bold;">Login Now →</a>
+            <p style="color: #64748b; margin: 10px 0 0 0; font-size: 14px;">
+                      Project is not live so login link may not work.
+            </p>
           </p>
         </div>
         
@@ -391,6 +388,6 @@ export const sendWelcomeEmail = async (user) => {
 // Optional login alert (simplified)
 export const sendLoginAlertEmail = async (user, loginInfo) => {
   // Optional feature - you can implement this later
-  console.log(`📧 Login alert for ${user.email} from IP: ${loginInfo.ip}`);
+  console.log(` Login alert for ${user.email} from IP: ${loginInfo.ip}`);
   return { success: true };
 };
