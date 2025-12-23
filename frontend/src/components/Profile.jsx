@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
@@ -18,7 +20,8 @@ import {
   User,
   Eye,
   EyeOff,
-  LogOut
+  LogOut,
+  ChevronRight
 } from 'lucide-react';
 
 const Profile = ({ user, updateUser }) => {
@@ -62,27 +65,31 @@ const Profile = ({ user, updateUser }) => {
     };
   }, []);
 
-  // Fetch saved designs from localStorage - USER SPECIFIC ONLY
+  // ✅ FIXED: Fetch designs from savedShoeDesigns (same as My-Designs page)
   useEffect(() => {
     const fetchDesigns = async () => {
       setIsLoading(true);
 
       try {
-        const savedDesigns = localStorage.getItem('savedDesigns');
+        // Load from savedShoeDesigns (same key as Designer/My-Designs)
+        const savedDesigns = localStorage.getItem('savedShoeDesigns');
         
         if (savedDesigns) {
           const parsedDesigns = JSON.parse(savedDesigns);
           
-          // ✅ FILTER DESIGNS BY CURRENT USER ONLY (not guest)
-          const userDesigns = parsedDesigns.filter(
-            design => design.userId === user?._id
-          );
+          // ✅ FILTER DESIGNS BY CURRENT USER ONLY
+          const userDesigns = user?._id
+            ? parsedDesigns.filter(
+                design => !design.userId || design.userId === user._id || design.userId === user.id
+              )
+            : parsedDesigns;
 
           // Transform to match component structure
           const transformedDesigns = userDesigns.map((design) => ({
             id: design.id,
             name: design.name,
-            color: design.color,
+            colors: design.colors || {},
+            preview: design.preview,
             createdAt: design.createdAt,
             category: 'Custom Design',
             emoji: '👟'
@@ -101,12 +108,45 @@ const Profile = ({ user, updateUser }) => {
       }
     };
 
-    if (user?._id) {
+    if (user?._id || user?.id) {
       fetchDesigns();
     } else {
       setIsLoading(false);
     }
   }, [user, showNotificationMessage]);
+
+  // Listen for changes from other tabs
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'savedShoeDesigns') {
+        // Reload designs if storage changed
+        const saved = localStorage.getItem('savedShoeDesigns');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const userDesigns = user?._id
+            ? parsed.filter(
+                design => !design.userId || design.userId === user._id || design.userId === user.id
+              )
+            : parsed;
+          
+          const transformed = userDesigns.map((design) => ({
+            id: design.id,
+            name: design.name,
+            colors: design.colors || {},
+            preview: design.preview,
+            createdAt: design.createdAt,
+            category: 'Custom Design',
+            emoji: '👟'
+          }));
+          
+          setDesigns(transformed);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [user]);
 
   // Memoized stats - REAL DATA ONLY
   const designStats = useMemo(() => {
@@ -148,13 +188,13 @@ const Profile = ({ user, updateUser }) => {
 
   // Memoized tabs
   const tabs = useMemo(() => [
-    { id: 'designs', label: 'My Designs', icon: '👟', count: designs.length },
-    { id: 'stats', label: 'Statistics', icon: '📊', count: null },
-    { id: 'achievements', label: 'Achievements', icon: '🏆', count: null },
+    { id: 'designs', label: 'My Designs', icon: '', count: designs.length },
+    { id: 'stats', label: 'Statistics', icon: '', count: null },
+    { id: 'achievements', label: 'Achievements', icon: '', count: null },
     { id: 'settings', label: 'Settings', icon: '⚙️', count: null },
   ], [designs.length]);
 
-  // Memoized achievements - REAL PROGRESS (NO DECALS)
+  // Memoized achievements - REAL PROGRESS
   const achievements = useMemo(() => {
     const totalDesigns = designs.length;
     
@@ -233,13 +273,11 @@ const Profile = ({ user, updateUser }) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       showNotificationMessage('Image size should be less than 5MB', 'error');
       return;
     }
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       showNotificationMessage('Please upload a valid image file', 'error');
       return;
@@ -252,7 +290,6 @@ const Profile = ({ user, updateUser }) => {
       reader.onloadend = async () => {
         const imageData = reader.result;
         
-        // Update user profile with new image
         await updateUser({ ...user, profileImage: imageData });
         setEditForm(prev => ({ ...prev, profileImage: imageData }));
         
@@ -652,7 +689,7 @@ const ProfileSidebar = React.memo(({
 
 ProfileSidebar.displayName = 'ProfileSidebar';
 
-// Recent Designs Card (NO DECALS COUNT)
+// Recent Designs Card
 const RecentDesignsCard = React.memo(({ designs }) => (
   <motion.div
     initial={{ opacity: 0, x: -20 }}
@@ -673,7 +710,10 @@ const RecentDesignsCard = React.memo(({ designs }) => (
         >
           <div 
             className="w-12 h-12 rounded-lg flex items-center justify-center text-xl flex-shrink-0 shadow-md"
-            style={{ backgroundColor: design.color }}
+            style={{ 
+              backgroundColor: design.colors?.body || '#FFFFFF',
+              border: '1px solid #e5e7eb'
+            }}
           >
             {design.emoji}
           </div>
@@ -727,7 +767,7 @@ const TabNavigation = React.memo(({ tabs, activeTab, onTabChange }) => (
 
 TabNavigation.displayName = 'TabNavigation';
 
-// Designs Tab Component (NO DELETE BUTTON)
+// Designs Tab Component
 const DesignsTab = React.memo(({ designs, isLoading, onShare, onSelectDesign }) => (
   <motion.div
     key="designs"
@@ -741,7 +781,7 @@ const DesignsTab = React.memo(({ designs, isLoading, onShare, onSelectDesign }) 
         My Designs {designs.length > 0 && `(${designs.length})`}
       </h2>
       <button 
-        onClick={() => window.location.href = '/designer'}
+        onClick={() => window.location.href = '/my-designs'}
         className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity"
       >
         <Plus size={18} />
@@ -796,7 +836,7 @@ const EmptyDesignsState = React.memo(() => (
 
 EmptyDesignsState.displayName = 'EmptyDesignsState';
 
-// Design Card Component (NO DELETE, NO DECALS)
+// Design Card Component
 const DesignCard = React.memo(({ design, onShare, onClick }) => (
   <motion.div
     whileHover={{ y: -5, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
@@ -805,12 +845,21 @@ const DesignCard = React.memo(({ design, onShare, onClick }) => (
   >
     <div className="flex items-start justify-between mb-4">
       <div className="flex items-center gap-4 flex-1 min-w-0">
-        <div 
-          className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl flex-shrink-0 shadow-md"
-          style={{ backgroundColor: design.color }}
-        >
-          {design.emoji}
-        </div>
+        {/* Preview Image or Color Display */}
+        {design.preview ? (
+          <img
+            src={design.preview}
+            alt={design.name}
+            className="w-16 h-16 rounded-xl flex-shrink-0 shadow-md object-contain bg-gray-50"
+          />
+        ) : (
+          <div 
+            className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl flex-shrink-0 shadow-md border border-gray-200"
+            style={{ backgroundColor: design.colors?.body || '#FFFFFF' }}
+          >
+            {design.emoji}
+          </div>
+        )}
         <div className="min-w-0 flex-1">
           <h3 className="text-lg font-bold text-gray-900 truncate mb-1">{design.name}</h3>
           <p className="text-sm text-gray-500">{design.category}</p>
@@ -823,7 +872,12 @@ const DesignCard = React.memo(({ design, onShare, onClick }) => (
     
     <div className="flex items-center gap-3 mb-4">
       <div className="flex-1 bg-gray-50 rounded-lg p-3 text-center">
-        <div className="text-xl font-bold text-gray-900" style={{ color: design.color }}>●</div>
+        <div 
+          className="text-xl font-bold"
+          style={{ color: design.colors?.body || '#000000' }}
+        >
+          ●
+        </div>
         <div className="text-xs text-gray-600">Primary Color</div>
       </div>
       <div className="flex-1 bg-gray-50 rounded-lg p-3 text-center">
@@ -861,7 +915,7 @@ const DesignCard = React.memo(({ design, onShare, onClick }) => (
 
 DesignCard.displayName = 'DesignCard';
 
-// Stats Tab Component (NO DECALS)
+// Stats Tab Component
 const StatsTab = React.memo(({ designStats, designs }) => {
   const timeStats = useMemo(() => {
     if (designs.length === 0) return { oldestDate: null, newestDate: null, daysSinceFirst: 0 };
@@ -978,7 +1032,7 @@ const StatCard = React.memo(({ icon, label, value, color, subtitle }) => (
 
 StatCard.displayName = 'StatCard';
 
-// Achievements Tab Component (NO DECALS)
+// Achievements Tab Component
 const AchievementsTab = React.memo(({ achievements, designs }) => {
   const unlockedCount = useMemo(() => 
     achievements.filter(a => a.unlocked).length,
@@ -1065,7 +1119,7 @@ const AchievementCard = React.memo(({ achievement }) => (
 
 AchievementCard.displayName = 'AchievementCard';
 
-// Settings Tab Component (WITH PROFILE PICTURE UPLOAD & PASSWORD CHANGE)
+// Settings Tab Component
 const SettingsTab = React.memo(({ 
   user, 
   fileInputRef, 
@@ -1259,7 +1313,7 @@ const SettingsTab = React.memo(({
 
 SettingsTab.displayName = 'SettingsTab';
 
-// Design Detail Modal Component (NO DELETE, NO DECALS)
+// Design Detail Modal Component
 const DesignDetailModal = React.memo(({ design, onClose }) => {
   if (!design) return null;
 
@@ -1281,12 +1335,20 @@ const DesignDetailModal = React.memo(({ design, onClose }) => {
         >
           <div className="flex justify-between items-start mb-6">
             <div className="flex-1">
-              <div 
-                className="w-24 h-24 rounded-2xl flex items-center justify-center text-5xl mb-4 shadow-lg"
-                style={{ backgroundColor: design.color }}
-              >
-                {design.emoji}
-              </div>
+              {design.preview ? (
+                <img
+                  src={design.preview}
+                  alt={design.name}
+                  className="w-24 h-24 rounded-2xl mb-4 shadow-lg object-contain bg-gray-50"
+                />
+              ) : (
+                <div 
+                  className="w-24 h-24 rounded-2xl flex items-center justify-center text-5xl mb-4 shadow-lg"
+                  style={{ backgroundColor: design.colors?.body || '#FFFFFF' }}
+                >
+                  {design.emoji}
+                </div>
+              )}
               <h3 className="text-3xl font-bold text-gray-900 mb-2">{design.name}</h3>
               <p className="text-gray-600">{design.category}</p>
               <p className="text-sm text-gray-500 mt-2 flex items-center gap-1">
@@ -1308,7 +1370,12 @@ const DesignDetailModal = React.memo(({ design, onClose }) => {
           
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl">
-              <div className="text-3xl font-bold" style={{ color: design.color }}>●</div>
+              <div 
+                className="text-3xl font-bold"
+                style={{ color: design.colors?.body || '#000000' }}
+              >
+                ●
+              </div>
               <div className="text-sm text-gray-600 font-medium">Primary Color</div>
             </div>
             <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl">
@@ -1341,8 +1408,5 @@ const DesignDetailModal = React.memo(({ design, onClose }) => {
 });
 
 DesignDetailModal.displayName = 'DesignDetailModal';
-
-// Import missing ChevronRight
-import { ChevronRight } from 'lucide-react';
 
 export default React.memo(Profile);

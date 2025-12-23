@@ -12,7 +12,8 @@ const Contact = lazy(() => import('./components/Contact'));
 const OTPVerification = lazy(() => import('./components/OTPVerification'));
 const Privacy = lazy(() => import('./components/PrivacyPolicy'));
 const Terms = lazy(() => import('./components/TermsOfService'));
-
+const MyDesigns = lazy(() => import('./components/my-designs'));
+const Suggestions = lazy(() => import('./components/Suggestions'));
 // Loading spinner for routes
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -37,6 +38,7 @@ const AppRoutes = ({ user, onLoginSuccess, updateUser }) => {
             )
           }
         />
+      
         
         <Route
           path="/otp-verification"
@@ -70,7 +72,27 @@ const AppRoutes = ({ user, onLoginSuccess, updateUser }) => {
             )
           }
         />
-        
+        <Route
+          path="/my-designs"
+          element={
+            user ? (
+              <MyDesigns user={user} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+
+        <Route
+          path="/suggestions"
+          element={
+            user ? (
+              <Suggestions user={user} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
         <Route
           path="/cart"
           element={

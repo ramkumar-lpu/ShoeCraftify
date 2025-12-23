@@ -1,650 +1,1218 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useCart } from '../contexts/CartContext';
+// // import React, { useState, Suspense, useRef, useEffect, useCallback } from "react";
+// // import { Canvas, useFrame } from "@react-three/fiber";
+// // import {
+// //   useGLTF,
+// //   OrbitControls,
+// //   Stage,
+// //   PerspectiveCamera,
+// //   Html,
+// //   useProgress,
+// // } from "@react-three/drei";
+// // import { Link } from "react-router-dom";
+// // import { useCart } from "../contexts/CartContext";
 
-const Designer = ({ user }) => {
+// // // Preload the model from /public
+// // useGLTF.preload("/nikeShoes.glb");
+
+// // // Lightweight Loader
+// // function Loader() {
+// //   const { progress } = useProgress();
+// //   return (
+// //     <Html center>
+// //       <div className="flex flex-col items-center justify-center w-64 p-4 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl">
+// //         <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-3">
+// //           <div
+// //             className="bg-black h-full transition-all duration-300 ease-out"
+// //             style={{ width: `${progress}%` }}
+// //           />
+// //         </div>
+// //         <p className="text-[11px] font-black uppercase tracking-[0.2em]">
+// //           Loading {Math.round(progress)}%
+// //         </p>
+// //       </div>
+// //     </Html>
+// //   );
+// // }
+
+// // // Simple fallback shape if GLB fails
+// // function FallbackShoe({ colors }) {
+// //   const group = useRef();
+// //   useFrame((state) => {
+// //     if (group.current) {
+// //       group.current.rotation.y = Math.sin(state.clock.getElapsedTime() / 4) * 0.2;
+// //     }
+// //   });
+
+// //   return (
+// //     <group ref={group} position={[0, -0.3, 0]}>
+// //       <mesh position={[0, 0.25, 0]} castShadow>
+// //         <boxGeometry args={[1.8, 0.8, 3]} />
+// //         <meshStandardMaterial color={colors.body} roughness={0.4} metalness={0.1} />
+// //       </mesh>
+// //       <mesh position={[0, -0.25, 0]} castShadow>
+// //         <boxGeometry args={[2, 0.25, 3.2]} />
+// //         <meshStandardMaterial color={colors.sole} roughness={0.7} metalness={0.2} />
+// //       </mesh>
+// //       <mesh position={[0, 0.7, -0.5]} castShadow>
+// //         <boxGeometry args={[0.3, 0.1, 1.5]} />
+// //         <meshStandardMaterial color={colors.laces} roughness={0.8} />
+// //       </mesh>
+// //       <mesh position={[0.9, 0.35, 0]} castShadow>
+// //         <sphereGeometry args={[0.15, 16, 16]} />
+// //         <meshStandardMaterial color={colors.logo} roughness={0.3} metalness={0.5} />
+// //       </mesh>
+// //       <Html position={[0, 1.4, 0]} center>
+// //         <div className="bg-amber-100 border border-amber-400 text-amber-800 px-3 py-1 rounded-lg text-[11px] font-bold">
+// //           ⚠ Preview Mode
+// //         </div>
+// //       </Html>
+// //     </group>
+// //   );
+// // }
+
+// // // 3D Model
+// // function ShoeModel({ colors, onModelReady }) {
+// //   const group = useRef();
+// //   const gltf = useGLTF("/nikeShoes.glb");
+// //   const scene = gltf?.scene;
+// //   const materials = gltf?.materials ?? {};
+
+// //   useFrame((state) => {
+// //     if (group.current && scene) {
+// //       group.current.rotation.y = Math.sin(state.clock.getElapsedTime() / 4) * 0.1;
+// //     }
+// //   });
+
+// //   useEffect(() => {
+// //     if (!scene) {
+// //       onModelReady?.(false);
+// //       return;
+// //     }
+// //     onModelReady?.(true);
+// //   }, [scene, onModelReady]);
+
+// //   useEffect(() => {
+// //     if (!scene || !materials) return;
+// //     try {
+// //       Object.entries(materials).forEach(([name, mat]) => {
+// //         if (!mat?.isMaterial) return;
+// //         const key = name.toLowerCase();
+// //         if (key.includes("logo")) mat.color.set(colors.logo);
+// //         else if (key.includes("sole")) mat.color.set(colors.sole);
+// //         else if (key.includes("lace")) mat.color.set(colors.laces);
+// //         else mat.color.set(colors.body);
+// //         mat.needsUpdate = true;
+// //       });
+// //     } catch (err) {
+// //       console.warn("Material update failed:", err);
+// //     }
+// //   }, [colors, materials, scene]);
+
+// //   if (!scene) return <FallbackShoe colors={colors} />;
+
+// //   return (
+// //     <group ref={group} scale={1.2} dispose={null}>
+// //       <primitive object={scene} />
+// //     </group>
+// //   );
+// // }
+
+// // function ShoeConfigurator() {
+// //   const { addToCart } = useCart();
+// //   const [activePart, setActivePart] = useState("body");
+// //   const [colors, setColors] = useState({
+// //     body: "#FFFFFF",
+// //     sole: "#E60012",
+// //     laces: "#1A1A1A",
+// //     logo: "#1A1A1A",
+// //   });
+// //   const [designName, setDesignName] = useState("");
+// //   const [savedDesigns, setSavedDesigns] = useState([]);
+// //   const [is3DReady, setIs3DReady] = useState(false);
+
+// //   const parts = [
+// //     { id: "body", label: "Body", icon: "👟" },
+// //     { id: "sole", label: "Sole", icon: "⬛" },
+// //     { id: "laces", label: "Laces", icon: "🧵" },
+// //     { id: "logo", label: "Logo", icon: "✓" },
+// //   ];
+
+// //   // Load saved designs
+// //   useEffect(() => {
+// //     const saved = localStorage.getItem("savedShoeDesigns");
+// //     if (saved) {
+// //       try {
+// //         setSavedDesigns(JSON.parse(saved));
+// //       } catch (e) {
+// //         console.error("Error loading saved designs:", e);
+// //       }
+// //     }
+// //   }, []);
+
+// //   const updateColor = useCallback(
+// //     (newColor) => {
+// //       const hex = /^#[0-9A-F]{6}$/i;
+// //       if (hex.test(newColor)) {
+// //         setColors((prev) => ({ ...prev, [activePart]: newColor }));
+// //       }
+// //     },
+// //     [activePart]
+// //   );
+
+// //   const handleSaveDesign = () => {
+// //     if (!designName.trim()) {
+// //       alert("Please enter a design name");
+// //       return;
+// //     }
+// //     const newDesign = {
+// //       id: Date.now(),
+// //       name: designName.trim(),
+// //       colors: { ...colors },
+// //       createdAt: new Date().toISOString(),
+// //     };
+// //     const updated = [...savedDesigns, newDesign];
+// //     setSavedDesigns(updated);
+// //     localStorage.setItem("savedShoeDesigns", JSON.stringify(updated));
+// //     alert("Design saved!");
+// //     setDesignName("");
+// //   };
+
+// //   const handleAddToCart = () => {
+// //     if (!designName.trim()) {
+// //       alert("Please enter a design name");
+// //       return;
+// //     }
+// //     const canvas = document.querySelector("canvas");
+// //     let preview = null;
+// //     if (canvas) {
+// //       try {
+// //         preview = canvas.toDataURL("image/jpeg", 0.6);
+// //       } catch {
+// //         /* ignore */
+// //       }
+// //     }
+// //     const design = {
+// //       id: Date.now(),
+// //       name: designName.trim(),
+// //       colors: { ...colors },
+// //       preview,
+// //       price: 129.99,
+// //       quantity: 1,
+// //       type: "custom-design",
+// //     };
+// //     addToCart(design);
+// //     alert("Added to cart!");
+// //   };
+
+// //   const handleDownload = () => {
+// //     const canvas = document.querySelector("canvas");
+// //     if (!canvas) {
+// //       alert("Unable to capture design");
+// //       return;
+// //     }
+// //     try {
+// //       const image = canvas.toDataURL("image/png");
+// //       const link = document.createElement("a");
+// //       link.download = `custom-shoe-${Date.now()}.png`;
+// //       link.href = image;
+// //       link.click();
+// //     } catch {
+// //       alert("Failed to download image");
+// //     }
+// //   };
+
+// //   const handleReset = () => {
+// //     setColors({
+// //       body: "#FFFFFF",
+// //       sole: "#E60012",
+// //       laces: "#1A1A1A",
+// //       logo: "#1A1A1A",
+// //     });
+// //     setDesignName("");
+// //   };
+
+// //   return (
+// //     <div className="flex flex-col lg:flex-row min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+// //       {/* 3D View */}
+// //       <section className="w-full lg:w-2/3 h-[55vh] lg:h-screen bg-gray-100 relative">
+// //         <Canvas
+// //           shadows
+// //           dpr={[1, 2]}
+// //           gl={{ preserveDrawingBuffer: true, antialias: true, alpha: false }}
+// //           onCreated={({ gl }) => gl.setClearColor("#e8e8e8")}
+// //         >
+// //           <PerspectiveCamera makeDefault position={[0, 0, 4]} fov={50} />
+// //           <Suspense fallback={<Loader />}>
+// //             <Stage environment="city" intensity={0.6} contactShadow shadows>
+// //               <ShoeModel colors={colors} onModelReady={setIs3DReady} />
+// //             </Stage>
+// //           </Suspense>
+// //           <OrbitControls enableZoom minDistance={2} maxDistance={8} enablePan={false} />
+// //         </Canvas>
+
+// //         <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg">
+// //           <p className="text-xs font-bold text-gray-700">
+// //             {is3DReady ? "✓ 3D Model Loaded" : "⚠ Preview Mode"}
+// //           </p>
+// //         </div>
+// //       </section>
+
+// //       {/* Controls */}
+// //       <section className="w-full lg:w-1/3 bg-white flex flex-col max-h-[45vh] lg:max-h-screen shadow-2xl">
+// //         <div className="p-6 lg:p-8 overflow-y-auto flex-grow">
+// //           <header className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+// //             <div>
+// //               <h2 className="text-3xl font-black uppercase tracking-tight">Customize</h2>
+// //               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+// //                 Design your signature look
+// //               </p>
+// //             </div>
+// //             <Link
+// //               to="/my-designs"
+// //               className="text-[10px] font-bold uppercase tracking-widest border border-black px-4 py-2 rounded-full hover:bg-black hover:text-white transition"
+// //             >
+// //               My Designs ({savedDesigns.length})
+// //             </Link>
+// //           </header>
+
+// //           {/* Design Name */}
+// //           <div className="mb-5">
+// //             <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-500 mb-2">
+// //               Design Name
+// //             </label>
+// //             <input
+// //               type="text"
+// //               value={designName}
+// //               onChange={(e) => setDesignName(e.target.value)}
+// //               placeholder="Enter name..."
+// //               className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+// //               maxLength={50}
+// //             />
+// //           </div>
+
+// //           {/* Parts */}
+// //           <div className="grid grid-cols-2 gap-3 mb-6">
+// //             {parts.map((part) => (
+// //               <button
+// //                 key={part.id}
+// //                 onClick={() => setActivePart(part.id)}
+// //                 className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+// //                   activePart === part.id
+// //                     ? "border-black bg-black text-white"
+// //                     : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-400"
+// //                 }`}
+// //               >
+// //                 <span>{part.icon}</span>
+// //                 <div
+// //                   className="w-4 h-4 rounded-full border border-current"
+// //                   style={{ backgroundColor: colors[part.id] }}
+// //                 />
+// //                 <span className="text-[11px] font-bold uppercase tracking-tight">
+// //                   {part.label}
+// //                 </span>
+// //               </button>
+// //             ))}
+// //           </div>
+
+// //           {/* Color Picker */}
+// //           <div className="bg-gray-50 p-6 rounded-2xl border-2 border-gray-200">
+// //             <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-3">
+// //               Color for {parts.find((p) => p.id === activePart)?.label}
+// //             </label>
+// //             <input
+// //               type="color"
+// //               value={colors[activePart]}
+// //               onChange={(e) => updateColor(e.target.value)}
+// //               className="w-full h-16 rounded-xl cursor-pointer border-4 border-white shadow-lg mb-4"
+// //             />
+// //             <div className="flex items-center gap-2 bg-white rounded-xl p-2 border-2 border-gray-200">
+// //               <span className="text-gray-600 font-bold">#</span>
+// //               <input
+// //                 type="text"
+// //                 value={colors[activePart].replace("#", "")}
+// //                 onChange={(e) => {
+// //                   const value = e.target.value.replace(/[^0-9A-Fa-f]/g, "");
+// //                   if (value.length <= 6) updateColor(`#${value.padEnd(6, "0")}`);
+// //                 }}
+// //                 placeholder="FFFFFF"
+// //                 className="flex-1 px-2 py-2 text-sm uppercase focus:outline-none font-mono"
+// //                 maxLength={6}
+// //               />
+// //             </div>
+// //           </div>
+// //         </div>
+
+// //         {/* Actions */}
+// //         <div className="p-6 border-t border-gray-100 bg-white flex flex-col gap-3">
+// //           <div className="grid grid-cols-2 gap-3">
+// //             <button
+// //               onClick={handleSaveDesign}
+// //               className="py-3 text-[11px] font-bold uppercase tracking-widest border-2 border-black rounded-full hover:bg-gray-100"
+// //             >
+// //               💾 Save
+// //             </button>
+// //             <button
+// //               onClick={handleAddToCart}
+// //               className="py-3 text-[11px] font-bold uppercase tracking-widest bg-black text-white rounded-full hover:bg-gray-800"
+// //             >
+// //               🛒 Add to Cart
+// //             </button>
+// //           </div>
+// //           <button
+// //             onClick={handleDownload}
+// //             className="w-full py-3 text-[11px] font-bold uppercase tracking-widest border-2 border-black rounded-full hover:bg-black hover:text-white"
+// //           >
+// //             📥 Download
+// //           </button>
+// //           <button
+// //             onClick={handleReset}
+// //             className="w-full py-3 text-[11px] font-bold uppercase tracking-widest border border-gray-300 rounded-full hover:bg-gray-50"
+// //           >
+// //             🔄 Reset
+// //           </button>
+// //         </div>
+// //       </section>
+// //     </div>
+// //   );
+// // }
+
+// // export default ShoeConfigurator;
+
+
+
+
+
+
+
+// import React, { useState, Suspense, useRef, useEffect, useCallback } from "react";
+// import { Canvas, useFrame } from "@react-three/fiber";
+// import {
+//   useGLTF,
+//   OrbitControls,
+//   Stage,
+//   PerspectiveCamera,
+//   Html,
+//   useProgress,
+// } from "@react-three/drei";
+// import { Link } from "react-router-dom";
+// import { useCart } from "../contexts/CartContext";
+
+// // Preload the model from /public
+// useGLTF.preload("/nikeShoes.glb");
+
+// // Helper function to capture canvas preview
+// const capturePreview = () => {
+//   const canvas = document.querySelector("canvas");
+//   try {
+//     return canvas ? canvas.toDataURL("image/jpeg", 0.6) : null;
+//   } catch (error) {
+//     console.warn("Could not capture preview:", error);
+//     return null;
+//   }
+// };
+
+// // Lightweight Loader
+// function Loader() {
+//   const { progress } = useProgress();
+//   return (
+//     <Html center>
+//       <div className="flex flex-col items-center justify-center w-64 p-4 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl">
+//         <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-3">
+//           <div
+//             className="bg-black h-full transition-all duration-300 ease-out"
+//             style={{ width: `${progress}%` }}
+//           />
+//         </div>
+//         <p className="text-[11px] font-black uppercase tracking-[0.2em]">
+//           Loading {Math.round(progress)}%
+//         </p>
+//       </div>
+//     </Html>
+//   );
+// }
+
+// // Simple fallback shape if GLB fails
+// function FallbackShoe({ colors }) {
+//   const group = useRef();
+//   useFrame((state) => {
+//     if (group.current) {
+//       group.current.rotation.y = Math.sin(state.clock.getElapsedTime() / 4) * 0.2;
+//     }
+//   });
+
+//   return (
+//     <group ref={group} position={[0, -0.3, 0]}>
+//       <mesh position={[0, 0.25, 0]} castShadow>
+//         <boxGeometry args={[1.8, 0.8, 3]} />
+//         <meshStandardMaterial color={colors.body} roughness={0.4} metalness={0.1} />
+//       </mesh>
+//       <mesh position={[0, -0.25, 0]} castShadow>
+//         <boxGeometry args={[2, 0.25, 3.2]} />
+//         <meshStandardMaterial color={colors.sole} roughness={0.7} metalness={0.2} />
+//       </mesh>
+//       <mesh position={[0, 0.7, -0.5]} castShadow>
+//         <boxGeometry args={[0.3, 0.1, 1.5]} />
+//         <meshStandardMaterial color={colors.laces} roughness={0.8} />
+//       </mesh>
+//       <mesh position={[0.9, 0.35, 0]} castShadow>
+//         <sphereGeometry args={[0.15, 16, 16]} />
+//         <meshStandardMaterial color={colors.logo} roughness={0.3} metalness={0.5} />
+//       </mesh>
+//       <Html position={[0, 1.4, 0]} center>
+//         <div className="bg-amber-100 border border-amber-400 text-amber-800 px-3 py-1 rounded-lg text-[11px] font-bold">
+//           ⚠ Preview Mode
+//         </div>
+//       </Html>
+//     </group>
+//   );
+// }
+
+// // 3D Model
+// function ShoeModel({ colors, onModelReady }) {
+//   const group = useRef();
+//   const gltf = useGLTF("/nikeShoes.glb");
+//   const scene = gltf?.scene;
+//   const materials = gltf?.materials ?? {};
+
+//   useFrame((state) => {
+//     if (group.current && scene) {
+//       group.current.rotation.y = Math.sin(state.clock.getElapsedTime() / 4) * 0.1;
+//     }
+//   });
+
+//   useEffect(() => {
+//     if (!scene) {
+//       onModelReady?.(false);
+//       return;
+//     }
+//     onModelReady?.(true);
+//   }, [scene, onModelReady]);
+
+//   useEffect(() => {
+//     if (!scene || !materials) return;
+//     try {
+//       Object.entries(materials).forEach(([name, mat]) => {
+//         if (!mat?.isMaterial) return;
+//         const key = name.toLowerCase();
+//         if (key.includes("logo")) mat.color.set(colors.logo);
+//         else if (key.includes("sole")) mat.color.set(colors.sole);
+//         else if (key.includes("lace")) mat.color.set(colors.laces);
+//         else mat.color.set(colors.body);
+//         mat.needsUpdate = true;
+//       });
+//     } catch (err) {
+//       console.warn("Material update failed:", err);
+//     }
+//   }, [colors, materials, scene]);
+
+//   if (!scene) return <FallbackShoe colors={colors} />;
+
+//   return (
+//     <group ref={group} scale={1.2} dispose={null}>
+//       <primitive object={scene} />
+//     </group>
+//   );
+// }
+
+// function ShoeConfigurator({ user }) {
+//   const { addToCart } = useCart();
+//   const [activePart, setActivePart] = useState("body");
+//   const [colors, setColors] = useState({
+//     body: "#FFFFFF",
+//     sole: "#E60012",
+//     laces: "#1A1A1A",
+//     logo: "#1A1A1A",
+//   });
+//   const [designName, setDesignName] = useState("");
+//   const [savedDesigns, setSavedDesigns] = useState([]);
+//   const [is3DReady, setIs3DReady] = useState(false);
+
+//   const parts = [
+//     { id: "body", label: "Body", icon: "👟" },
+//     { id: "sole", label: "Sole", icon: "⬛" },
+//     { id: "laces", label: "Laces", icon: "🧵" },
+//     { id: "logo", label: "Logo", icon: "✓" },
+//   ];
+
+//   // Load saved designs
+//   useEffect(() => {
+//     const saved = localStorage.getItem("savedShoeDesigns");
+//     if (saved) {
+//       try {
+//         setSavedDesigns(JSON.parse(saved));
+//       } catch (e) {
+//         console.error("Error loading saved designs:", e);
+//       }
+//     }
+//   }, []);
+
+//   const updateColor = useCallback(
+//     (newColor) => {
+//       const hex = /^#[0-9A-F]{6}$/i;
+//       if (hex.test(newColor)) {
+//         setColors((prev) => ({ ...prev, [activePart]: newColor }));
+//       }
+//     },
+//     [activePart]
+//   );
+
+//   const handleSaveDesign = () => {
+//     if (!designName.trim()) {
+//       alert("Please enter a design name");
+//       return;
+//     }
+
+//     const newDesign = {
+//       id: Date.now(),
+//       name: designName.trim(),
+//       colors: { ...colors },
+//       createdAt: new Date().toISOString(),
+//       userId: user?.id || user?._id || null,        // ← Store user ID
+//       preview: capturePreview(),                     // ← Capture preview image
+//     };
+
+//     const updated = [...savedDesigns, newDesign];
+//     setSavedDesigns(updated);
+//     localStorage.setItem("savedShoeDesigns", JSON.stringify(updated));
+//     alert("Design saved successfully!");
+//     setDesignName("");
+//   };
+
+//   const handleAddToCart = () => {
+//     if (!designName.trim()) {
+//       alert("Please enter a design name");
+//       return;
+//     }
+
+//     const design = {
+//       id: Date.now(),
+//       name: designName.trim(),
+//       colors: { ...colors },
+//       preview: capturePreview(),                     // ← Capture preview image
+//       price: 129.99,
+//       quantity: 1,
+//       type: "custom-design",
+//       userId: user?.id || user?._id || null,        // ← Store user ID
+//       createdAt: new Date().toISOString(),
+//     };
+
+//     addToCart(design);
+//     alert("Added to cart!");
+//   };
+
+//   const handleDownload = () => {
+//     const canvas = document.querySelector("canvas");
+//     if (!canvas) {
+//       alert("Unable to capture design");
+//       return;
+//     }
+//     try {
+//       const image = canvas.toDataURL("image/png");
+//       const link = document.createElement("a");
+//       link.download = `custom-shoe-${Date.now()}.png`;
+//       link.href = image;
+//       link.click();
+//     } catch {
+//       alert("Failed to download image");
+//     }
+//   };
+
+//   const handleReset = () => {
+//     setColors({
+//       body: "#FFFFFF",
+//       sole: "#E60012",
+//       laces: "#1A1A1A",
+//       logo: "#1A1A1A",
+//     });
+//     setDesignName("");
+//   };
+
+//   return (
+//     <div className="flex flex-col lg:flex-row min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+//       {/* 3D View */}
+//       <section className="w-full lg:w-2/3 h-[55vh] lg:h-screen bg-gray-100 relative">
+//         <Canvas
+//           shadows
+//           dpr={[1, 2]}
+//           gl={{ preserveDrawingBuffer: true, antialias: true, alpha: false }}
+//           onCreated={({ gl }) => gl.setClearColor("#e8e8e8")}
+//         >
+//           <PerspectiveCamera makeDefault position={[0, 0, 4]} fov={50} />
+//           <Suspense fallback={<Loader />}>
+//             <Stage environment="city" intensity={0.6} contactShadow shadows>
+//               <ShoeModel colors={colors} onModelReady={setIs3DReady} />
+//             </Stage>
+//           </Suspense>
+//           <OrbitControls enableZoom minDistance={2} maxDistance={8} enablePan={false} />
+//         </Canvas>
+
+//         <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg">
+//           <p className="text-xs font-bold text-gray-700">
+//             {is3DReady ? "✓ 3D Model Loaded" : "⚠ Preview Mode"}
+//           </p>
+//         </div>
+//       </section>
+
+//       {/* Controls */}
+//       <section className="w-full lg:w-1/3 bg-white flex flex-col max-h-[45vh] lg:max-h-screen shadow-2xl">
+//         <div className="p-6 lg:p-8 overflow-y-auto flex-grow">
+//           <header className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+//             <div>
+//               <h2 className="text-3xl font-black uppercase tracking-tight">Customize</h2>
+//               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+//                 Design your signature look
+//               </p>
+//             </div>
+//             <Link
+//               to="/my-designs"
+//               className="text-[10px] font-bold uppercase tracking-widest border border-black px-4 py-2 rounded-full hover:bg-black hover:text-white transition"
+//             >
+//               My Designs ({savedDesigns.length})
+//             </Link>
+//           </header>
+
+//           {/* Design Name */}
+//           <div className="mb-5">
+//             <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-500 mb-2">
+//               Design Name
+//             </label>
+//             <input
+//               type="text"
+//               value={designName}
+//               onChange={(e) => setDesignName(e.target.value)}
+//               placeholder="Enter name..."
+//               className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+//               maxLength={50}
+//             />
+//           </div>
+
+//           {/* Parts */}
+//           <div className="grid grid-cols-2 gap-3 mb-6">
+//             {parts.map((part) => (
+//               <button
+//                 key={part.id}
+//                 onClick={() => setActivePart(part.id)}
+//                 className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+//                   activePart === part.id
+//                     ? "border-black bg-black text-white"
+//                     : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-400"
+//                 }`}
+//               >
+//                 <span>{part.icon}</span>
+//                 <div
+//                   className="w-4 h-4 rounded-full border border-current"
+//                   style={{ backgroundColor: colors[part.id] }}
+//                 />
+//                 <span className="text-[11px] font-bold uppercase tracking-tight">
+//                   {part.label}
+//                 </span>
+//               </button>
+//             ))}
+//           </div>
+
+//           {/* Color Picker */}
+//           <div className="bg-gray-50 p-6 rounded-2xl border-2 border-gray-200">
+//             <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-3">
+//               Color for {parts.find((p) => p.id === activePart)?.label}
+//             </label>
+//             <input
+//               type="color"
+//               value={colors[activePart]}
+//               onChange={(e) => updateColor(e.target.value)}
+//               className="w-full h-16 rounded-xl cursor-pointer border-4 border-white shadow-lg mb-4"
+//             />
+//             <div className="flex items-center gap-2 bg-white rounded-xl p-2 border-2 border-gray-200">
+//               <span className="text-gray-600 font-bold">#</span>
+//               <input
+//                 type="text"
+//                 value={colors[activePart].replace("#", "")}
+//                 onChange={(e) => {
+//                   const value = e.target.value.replace(/[^0-9A-Fa-f]/g, "");
+//                   if (value.length <= 6) updateColor(`#${value.padEnd(6, "0")}`);
+//                 }}
+//                 placeholder="FFFFFF"
+//                 className="flex-1 px-2 py-2 text-sm uppercase focus:outline-none font-mono"
+//                 maxLength={6}
+//               />
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* Actions */}
+//         <div className="p-6 border-t border-gray-100 bg-white flex flex-col gap-3">
+//           <div className="grid grid-cols-2 gap-3">
+//             <button
+//               onClick={handleSaveDesign}
+//               className="py-3 text-[11px] font-bold uppercase tracking-widest border-2 border-black rounded-full hover:bg-gray-100 transition"
+//             >
+//               💾 Save
+//             </button>
+//             <button
+//               onClick={handleAddToCart}
+//               className="py-3 text-[11px] font-bold uppercase tracking-widest bg-black text-white rounded-full hover:bg-gray-800 transition"
+//             >
+//               🛒 Add to Cart
+//             </button>
+//           </div>
+//           <button
+//             onClick={handleDownload}
+//             className="w-full py-3 text-[11px] font-bold uppercase tracking-widest border-2 border-black rounded-full hover:bg-black hover:text-white transition"
+//           >
+//             📥 Download
+//           </button>
+//           <button
+//             onClick={handleReset}
+//             className="w-full py-3 text-[11px] font-bold uppercase tracking-widest border border-gray-300 rounded-full hover:bg-gray-50 transition"
+//           >
+//             🔄 Reset
+//           </button>
+//         </div>
+//       </section>
+//     </div>
+//   );
+// }
+
+// export default ShoeConfigurator;
+
+
+
+
+import React, { useState, Suspense, useRef, useEffect, useCallback } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import {
+  useGLTF,
+  OrbitControls,
+  Stage,
+  PerspectiveCamera,
+  Html,
+  useProgress,
+} from "@react-three/drei";
+import { Link } from "react-router-dom";
+import { useCart } from "../contexts/CartContext";
+
+// Preload the model from /public
+useGLTF.preload("/nikeShoes.glb");
+
+// Lightweight Loader
+function Loader() {
+  const { progress } = useProgress();
+  return (
+    <Html center>
+      <div className="flex flex-col items-center justify-center w-64 p-4 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl">
+        <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-3">
+          <div
+            className="bg-black h-full transition-all duration-300 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <p className="text-[11px] font-black uppercase tracking-[0.2em]">
+          Loading {Math.round(progress)}%
+        </p>
+      </div>
+    </Html>
+  );
+}
+
+// Simple fallback shape if GLB fails
+function FallbackShoe({ colors }) {
+  const group = useRef();
+  useFrame((state) => {
+    if (group.current) {
+      group.current.rotation.y = Math.sin(state.clock.getElapsedTime() / 4) * 0.2;
+    }
+  });
+
+  return (
+    <group ref={group} position={[0, -0.3, 0]}>
+      <mesh position={[0, 0.25, 0]} castShadow>
+        <boxGeometry args={[1.8, 0.8, 3]} />
+        <meshStandardMaterial color={colors.body} roughness={0.4} metalness={0.1} />
+      </mesh>
+      <mesh position={[0, -0.25, 0]} castShadow>
+        <boxGeometry args={[2, 0.25, 3.2]} />
+        <meshStandardMaterial color={colors.sole} roughness={0.7} metalness={0.2} />
+      </mesh>
+      <mesh position={[0, 0.7, -0.5]} castShadow>
+        <boxGeometry args={[0.3, 0.1, 1.5]} />
+        <meshStandardMaterial color={colors.laces} roughness={0.8} />
+      </mesh>
+      <mesh position={[0.9, 0.35, 0]} castShadow>
+        <sphereGeometry args={[0.15, 16, 16]} />
+        <meshStandardMaterial color={colors.logo} roughness={0.3} metalness={0.5} />
+      </mesh>
+      <Html position={[0, 1.4, 0]} center>
+        <div className="bg-amber-100 border border-amber-400 text-amber-800 px-3 py-1 rounded-lg text-[11px] font-bold">
+          ⚠ Preview Mode
+        </div>
+      </Html>
+    </group>
+  );
+}
+
+// 3D Model
+function ShoeModel({ colors, onModelReady }) {
+  const group = useRef();
+  const gltf = useGLTF("/nikeShoes.glb");
+  const scene = gltf?.scene;
+  const materials = gltf?.materials ?? {};
+
+  useFrame((state) => {
+    if (group.current && scene) {
+      group.current.rotation.y = Math.sin(state.clock.getElapsedTime() / 4) * 0.1;
+    }
+  });
+
+  useEffect(() => {
+    if (!scene) {
+      onModelReady?.(false);
+      return;
+    }
+    // Wait a bit for the scene to fully render
+    const timer = setTimeout(() => {
+      onModelReady?.(true);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [scene, onModelReady]);
+
+  useEffect(() => {
+    if (!scene || !materials) return;
+    try {
+      Object.entries(materials).forEach(([name, mat]) => {
+        if (!mat?.isMaterial) return;
+        const key = name.toLowerCase();
+        if (key.includes("logo")) mat.color.set(colors.logo);
+        else if (key.includes("sole")) mat.color.set(colors.sole);
+        else if (key.includes("lace")) mat.color.set(colors.laces);
+        else mat.color.set(colors.body);
+        mat.needsUpdate = true;
+      });
+    } catch (err) {
+      console.warn("Material update failed:", err);
+    }
+  }, [colors, materials, scene]);
+
+  if (!scene) return <FallbackShoe colors={colors} />;
+
+  return (
+    <group ref={group} scale={1.2} dispose={null}>
+      <primitive object={scene} />
+    </group>
+  );
+}
+
+function ShoeConfigurator({ user }) {
   const { addToCart } = useCart();
-  const [selectedColor, setSelectedColor] = useState('#3B82F6');
-  const [decals, setDecals] = useState([]);
-  const [customName, setCustomName] = useState('My Custom Shoe');
-  const [notification, setNotification] = useState(null);
-  
-  const notificationTimeoutRef = useRef(null);
-  const nextIdRef = useRef(1);
+  const [activePart, setActivePart] = useState("body");
+  const [colors, setColors] = useState({
+    body: "#FFFFFF",
+    sole: "#E60012",
+    laces: "#1A1A1A",
+    logo: "#1A1A1A",
+  });
+  const [designName, setDesignName] = useState("");
+  const [savedDesigns, setSavedDesigns] = useState([]);
+  const [is3DReady, setIs3DReady] = useState(false);
 
-  // Memoized static data
-  const decalOptions = useMemo(() => [
-    { id: 'star', name: 'Star', icon: '⭐' },
-    { id: 'heart', name: 'Heart', icon: '❤️' },
-    { id: 'lightning', name: 'Lightning', icon: '⚡' },
-    { id: 'flame', name: 'Flame', icon: '🔥' },
-    { id: 'geometric', name: 'Geometric', icon: '🔷' },
-  ], []);
+  const parts = [
+    { id: "body", label: "Body", icon: "👟" },
+    { id: "sole", label: "Sole", icon: "⬛" },
+    { id: "laces", label: "Laces", icon: "🧵" },
+    { id: "logo", label: "Logo", icon: "✓" },
+  ];
 
-  const colorPalettes = useMemo(() => [
-    ['#000000', '#FFFFFF', '#6B7280', '#3B82F6'],
-    ['#EF4444', '#10B981', '#F59E0B', '#8B5CF6'],
-    ['#FBCFE8', '#C7D2FE', '#A7F3D0', '#FDE68A'],
-  ], []);
-
-  const MAX_DECALS = 5;
-  const BASE_PRICE = 2499;
-
-  // Memoized decal positions
-  const decalPositions = useMemo(() => [
-    { top: '30%', left: '30%' },
-    { top: '50%', left: '50%' },
-    { top: '70%', left: '20%' },
-    { top: '40%', left: '70%' },
-    { top: '60%', left: '60%' },
-  ], []);
-
-  // Show notification helper
-  const showNotification = useCallback((message, type = 'success') => {
-    if (notificationTimeoutRef.current) {
-      clearTimeout(notificationTimeoutRef.current);
+  // Load saved designs
+  useEffect(() => {
+    const saved = localStorage.getItem("savedShoeDesigns");
+    if (saved) {
+      try {
+        setSavedDesigns(JSON.parse(saved));
+      } catch (e) {
+        console.error("Error loading saved designs:", e);
+      }
     }
-
-    setNotification({ message, type });
-    
-    notificationTimeoutRef.current = setTimeout(() => {
-      setNotification(null);
-    }, 3000);
   }, []);
 
-  // Cleanup timeout on unmount
-  React.useEffect(() => {
-    return () => {
-      if (notificationTimeoutRef.current) {
-        clearTimeout(notificationTimeoutRef.current);
+  const updateColor = useCallback(
+    (newColor) => {
+      const hex = /^#[0-9A-F]{6}$/i;
+      if (hex.test(newColor)) {
+        setColors((prev) => ({ ...prev, [activePart]: newColor }));
       }
-    };
-  }, []);
+    },
+    [activePart]
+  );
 
-  // Memoized handlers
-  const handleColorChange = useCallback((color) => {
-    setSelectedColor(color);
-  }, []);
-
-  const handleNameChange = useCallback((e) => {
-    setCustomName(e.target.value);
-  }, []);
-
-  const handleAddDecal = useCallback((decal) => {
-    setDecals(prev => {
-      if (prev.length >= MAX_DECALS) {
-        showNotification(`Maximum ${MAX_DECALS} decals allowed`, 'warning');
-        return prev;
-      }
-      
-      const newDecal = {
-        id: nextIdRef.current++,
-        name: decal.name,
-        icon: decal.icon,
-      };
-
-      return [...prev, newDecal];
-    });
-  }, [showNotification]);
-
-  const handleRemoveDecal = useCallback((decalId) => {
-    setDecals(prev => prev.filter(d => d.id !== decalId));
-  }, []);
-
-  const handleAddToCart = useCallback(() => {
-    try {
-      const cartItem = {
-        id: `shoe_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        name: customName || 'Custom Shoe Design',
-        description: 'Custom designed shoe',
-        color: selectedColor,
-        price: BASE_PRICE,
-        quantity: 1,
-        customization: {
-          color: selectedColor,
-          decals: decals.map(d => d.name),
-          createdAt: new Date().toISOString()
+  // Function to capture preview with proper timing
+  const captureDesignPreview = () => {
+    return new Promise((resolve) => {
+      // Give the canvas time to render
+      setTimeout(() => {
+        const canvas = document.querySelector("canvas");
+        if (canvas) {
+          try {
+            const imageData = canvas.toDataURL("image/jpeg", 0.85);
+            console.log("Preview captured successfully:", imageData.substring(0, 50) + "...");
+            resolve(imageData);
+          } catch (error) {
+            console.error("Error capturing canvas:", error);
+            resolve(null);
+          }
+        } else {
+          console.warn("Canvas not found");
+          resolve(null);
         }
-      };
+      }, 300);
+    });
+  };
 
-      addToCart(cartItem);
-      showNotification(`${cartItem.name} added to cart! 🛒`, 'success');
-    } catch (error) {
-      console.error('Failed to add to cart:', error);
-      showNotification('Failed to add to cart. Please try again.', 'error');
+  const handleSaveDesign = async () => {
+    if (!designName.trim()) {
+      alert("Please enter a design name");
+      return;
     }
-  }, [customName, selectedColor, decals, addToCart, showNotification]);
 
-  const handleSaveDesign = useCallback(() => {
+    if (!is3DReady) {
+      alert("Please wait for the 3D model to load");
+      return;
+    }
+
+    // Capture preview
+    const preview = await captureDesignPreview();
+    console.log("Saving with preview:", !!preview);
+
+    const newDesign = {
+      id: Date.now(),
+      name: designName.trim(),
+      colors: { ...colors },
+      createdAt: new Date().toISOString(),
+      userId: user?.id || user?._id || null,
+      preview: preview,
+    };
+
+    const updated = [...savedDesigns, newDesign];
+    setSavedDesigns(updated);
+    localStorage.setItem("savedShoeDesigns", JSON.stringify(updated));
+    
+    alert("Design saved successfully!");
+    setDesignName("");
+  };
+
+  const handleAddToCart = async () => {
+    if (!designName.trim()) {
+      alert("Please enter a design name");
+      return;
+    }
+
+    if (!is3DReady) {
+      alert("Please wait for the 3D model to load");
+      return;
+    }
+
+    // Capture preview
+    const preview = await captureDesignPreview();
+    console.log("Adding to cart with preview:", !!preview);
+
+    const design = {
+      id: Date.now(),
+      name: designName.trim(),
+      colors: { ...colors },
+      preview: preview,
+      price: 129.99,
+      quantity: 1,
+      type: "custom-design",
+      userId: user?.id || user?._id || null,
+      createdAt: new Date().toISOString(),
+    };
+
+    addToCart(design);
+    alert("Added to cart!");
+  };
+
+  const handleDownload = () => {
+    const canvas = document.querySelector("canvas");
+    if (!canvas) {
+      alert("Unable to capture design");
+      return;
+    }
     try {
-      const designData = {
-        id: `design_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        userId: user?._id || 'guest',
-        name: customName,
-        color: selectedColor,
-        decals: decals,
-        createdAt: new Date().toISOString()
-      };
-
-      const savedDesigns = JSON.parse(localStorage.getItem('savedDesigns') || '[]');
-      savedDesigns.push(designData);
-      localStorage.setItem('savedDesigns', JSON.stringify(savedDesigns));
-      
-      showNotification('Design saved successfully! 🎨', 'success');
-    } catch (error) {
-      console.error('Failed to save design:', error);
-      showNotification('Failed to save design. Please try again.', 'error');
+      const image = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.download = `custom-shoe-${Date.now()}.png`;
+      link.href = image;
+      link.click();
+    } catch {
+      alert("Failed to download image");
     }
-  }, [customName, selectedColor, decals, user, showNotification]);
+  };
 
-  // Memoized design summary
-  const designSummary = useMemo(() => ({
-    name: customName,
-    color: selectedColor,
-    decalCount: decals.length,
-    price: BASE_PRICE
-  }), [customName, selectedColor, decals.length]);
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <DesignerHeader />
-
-        {/* Notification */}
-        <Notification notification={notification} />
-
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Left Panel - Design Controls */}
-          <DesignControlsPanel
-            customName={customName}
-            selectedColor={selectedColor}
-            colorPalettes={colorPalettes}
-            decals={decals}
-            decalOptions={decalOptions}
-            maxDecals={MAX_DECALS}
-            basePrice={BASE_PRICE}
-            onNameChange={handleNameChange}
-            onColorChange={handleColorChange}
-            onAddDecal={handleAddDecal}
-            onRemoveDecal={handleRemoveDecal}
-            onSaveDesign={handleSaveDesign}
-            onAddToCart={handleAddToCart}
-          />
-
-          {/* Middle Panel - Design Preview */}
-          <DesignPreviewPanel
-            selectedColor={selectedColor}
-            decals={decals}
-            decalPositions={decalPositions}
-            designSummary={designSummary}
-          />
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Designer Header Component
-const DesignerHeader = React.memo(() => (
-  <motion.div
-    initial={{ opacity: 0, y: -20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.3 }}
-    className="mb-8 text-center"
-  >
-    <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-      Custom Shoe Designer
-    </h1>
-    <p className="text-gray-600">
-      Create your unique shoe design
-    </p>
-  </motion.div>
-));
-
-DesignerHeader.displayName = 'DesignerHeader';
-
-// Notification Component
-const Notification = React.memo(({ notification }) => (
-  <AnimatePresence>
-    {notification && (
-      <motion.div
-        initial={{ opacity: 0, y: -50 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -50 }}
-        transition={{ duration: 0.3 }}
-        className="fixed top-4 right-4 z-50"
-      >
-        <div className={`px-6 py-3 rounded-lg shadow-lg ${
-          notification.type === 'success' ? 'bg-green-500' :
-          notification.type === 'warning' ? 'bg-yellow-500' :
-          'bg-red-500'
-        } text-white font-medium`}>
-          {notification.message}
-        </div>
-      </motion.div>
-    )}
-  </AnimatePresence>
-));
-
-Notification.displayName = 'Notification';
-
-// Design Controls Panel Component
-const DesignControlsPanel = React.memo(({
-  customName,
-  selectedColor,
-  colorPalettes,
-  decals,
-  decalOptions,
-  maxDecals,
-  basePrice,
-  onNameChange,
-  onColorChange,
-  onAddDecal,
-  onRemoveDecal,
-  onSaveDesign,
-  onAddToCart
-}) => (
-  <div className="lg:col-span-1 space-y-6">
-    {/* Design Name & Color */}
-    <DesignDetailsCard
-      customName={customName}
-      selectedColor={selectedColor}
-      colorPalettes={colorPalettes}
-      onNameChange={onNameChange}
-      onColorChange={onColorChange}
-    />
-
-    {/* Decals Selection */}
-    <DecalsCard
-      decals={decals}
-      decalOptions={decalOptions}
-      maxDecals={maxDecals}
-      onAddDecal={onAddDecal}
-      onRemoveDecal={onRemoveDecal}
-    />
-
-    {/* Action Buttons */}
-    <ActionButtons
-      basePrice={basePrice}
-      onSaveDesign={onSaveDesign}
-      onAddToCart={onAddToCart}
-    />
-  </div>
-));
-
-DesignControlsPanel.displayName = 'DesignControlsPanel';
-
-// Design Details Card
-const DesignDetailsCard = React.memo(({
-  customName,
-  selectedColor,
-  colorPalettes,
-  onNameChange,
-  onColorChange
-}) => (
-  <motion.div
-    initial={{ opacity: 0, x: -20 }}
-    animate={{ opacity: 1, x: 0 }}
-    transition={{ duration: 0.3 }}
-    className="bg-white rounded-xl p-5 shadow-lg"
-  >
-    <h2 className="text-lg font-bold text-gray-900 mb-4">Design Details</h2>
-    <div className="space-y-4">
-      <div>
-        <label htmlFor="design-name" className="block text-sm font-medium text-gray-700 mb-2">
-          Design Name
-        </label>
-        <input
-          id="design-name"
-          type="text"
-          value={customName}
-          onChange={onNameChange}
-          placeholder="Name your design"
-          className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-          maxLength={50}
-        />
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Select Color
-        </label>
-        <ColorPalettes
-          colorPalettes={colorPalettes}
-          selectedColor={selectedColor}
-          onColorChange={onColorChange}
-        />
-      </div>
-    </div>
-  </motion.div>
-));
-
-DesignDetailsCard.displayName = 'DesignDetailsCard';
-
-// Color Palettes Component
-const ColorPalettes = React.memo(({ colorPalettes, selectedColor, onColorChange }) => (
-  <div className="space-y-2">
-    {colorPalettes.map((palette, index) => (
-      <div key={index} className="flex space-x-2">
-        {palette.map((color) => (
-          <ColorButton
-            key={color}
-            color={color}
-            isSelected={selectedColor === color}
-            onClick={onColorChange}
-          />
-        ))}
-      </div>
-    ))}
-  </div>
-));
-
-ColorPalettes.displayName = 'ColorPalettes';
-
-// Color Button Component
-const ColorButton = React.memo(({ color, isSelected, onClick }) => (
-  <button
-    onClick={() => onClick(color)}
-    className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${
-      isSelected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'
-    }`}
-    style={{ backgroundColor: color }}
-    title={color}
-    aria-label={`Select color ${color}`}
-  />
-));
-
-ColorButton.displayName = 'ColorButton';
-
-// Decals Card Component
-const DecalsCard = React.memo(({
-  decals,
-  decalOptions,
-  maxDecals,
-  onAddDecal,
-  onRemoveDecal
-}) => (
-  <motion.div
-    initial={{ opacity: 0, x: -20 }}
-    animate={{ opacity: 1, x: 0 }}
-    transition={{ duration: 0.3, delay: 0.1 }}
-    className="bg-white rounded-xl p-5 shadow-lg"
-  >
-    <div className="flex justify-between items-center mb-4">
-      <h2 className="text-lg font-bold text-gray-900">Decals</h2>
-      <span className={`text-sm font-medium ${
-        decals.length >= maxDecals ? 'text-red-500' : 'text-gray-500'
-      }`}>
-        {decals.length}/{maxDecals}
-      </span>
-    </div>
-    
-    <div className="grid grid-cols-5 gap-3 mb-4">
-      {decalOptions.map((decal) => (
-        <DecalButton
-          key={decal.id}
-          decal={decal}
-          onAdd={onAddDecal}
-          disabled={decals.length >= maxDecals}
-        />
-      ))}
-    </div>
-
-    <ActiveDecalsList
-      decals={decals}
-      onRemoveDecal={onRemoveDecal}
-    />
-  </motion.div>
-));
-
-DecalsCard.displayName = 'DecalsCard';
-
-// Decal Button Component
-const DecalButton = React.memo(({ decal, onAdd, disabled }) => (
-  <button
-    onClick={() => onAdd(decal)}
-    disabled={disabled}
-    className="p-3 rounded-lg bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center transition-all hover:scale-105"
-    title={decal.name}
-    aria-label={`Add ${decal.name} decal`}
-  >
-    <span className="text-2xl">{decal.icon}</span>
-    <span className="text-xs mt-1 text-gray-700">{decal.name}</span>
-  </button>
-));
-
-DecalButton.displayName = 'DecalButton';
-
-// Active Decals List Component
-const ActiveDecalsList = React.memo(({ decals, onRemoveDecal }) => {
-  if (decals.length === 0) return null;
+  const handleReset = () => {
+    setColors({
+      body: "#FFFFFF",
+      sole: "#E60012",
+      laces: "#1A1A1A",
+      logo: "#1A1A1A",
+    });
+    setDesignName("");
+  };
 
   return (
-    <div className="border-t pt-4">
-      <h3 className="text-sm font-medium text-gray-700 mb-2">Active Decals</h3>
-      <div className="space-y-2">
-        <AnimatePresence>
-          {decals.map((decal) => (
-            <ActiveDecalItem
-              key={decal.id}
-              decal={decal}
-              onRemove={onRemoveDecal}
-            />
-          ))}
-        </AnimatePresence>
-      </div>
-    </div>
-  );
-});
+    <div className="flex flex-col lg:flex-row min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* 3D View */}
+      <section className="w-full lg:w-2/3 h-[55vh] lg:h-screen bg-gray-100 relative">
+        <Canvas
+          shadows
+          dpr={[1, 2]}
+          gl={{ preserveDrawingBuffer: true, antialias: true, alpha: false }}
+          onCreated={({ gl }) => gl.setClearColor("#e8e8e8")}
+        >
+          <PerspectiveCamera makeDefault position={[0, 0, 4]} fov={50} />
+          <Suspense fallback={<Loader />}>
+            <Stage environment="city" intensity={0.6} contactShadow shadows>
+              <ShoeModel colors={colors} onModelReady={setIs3DReady} />
+            </Stage>
+          </Suspense>
+          <OrbitControls enableZoom minDistance={2} maxDistance={8} enablePan={false} />
+        </Canvas>
 
-ActiveDecalsList.displayName = 'ActiveDecalsList';
+        <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg">
+          <p className="text-xs font-bold text-gray-700">
+            {is3DReady ? "✓ 3D Model Ready" : "⏳ Loading..."}
+          </p>
+        </div>
+      </section>
 
-// Active Decal Item Component
-const ActiveDecalItem = React.memo(({ decal, onRemove }) => (
-  <motion.div
-    initial={{ opacity: 0, height: 0 }}
-    animate={{ opacity: 1, height: 'auto' }}
-    exit={{ opacity: 0, height: 0 }}
-    transition={{ duration: 0.2 }}
-    className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
-  >
-    <div className="flex items-center space-x-2">
-      <span className="text-lg">{decal.icon}</span>
-      <span className="text-sm text-gray-900">{decal.name}</span>
-    </div>
-    <button
-      onClick={() => onRemove(decal.id)}
-      className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors"
-      aria-label={`Remove ${decal.name} decal`}
-    >
-      Remove
-    </button>
-  </motion.div>
-));
-
-ActiveDecalItem.displayName = 'ActiveDecalItem';
-
-// Action Buttons Component
-const ActionButtons = React.memo(({ basePrice, onSaveDesign, onAddToCart }) => (
-  <motion.div
-    initial={{ opacity: 0, x: -20 }}
-    animate={{ opacity: 1, x: 0 }}
-    transition={{ duration: 0.3, delay: 0.2 }}
-    className="space-y-3"
-  >
-    <button
-      onClick={onSaveDesign}
-      className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-medium hover:scale-105"
-    >
-      💾 Save Design
-    </button>
-    
-    <button
-      onClick={onAddToCart}
-      className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-medium hover:scale-105"
-    >
-      🛒 Add to Cart - ₹{basePrice.toLocaleString()}
-    </button>
-  </motion.div>
-));
-
-ActionButtons.displayName = 'ActionButtons';
-
-// Design Preview Panel Component
-const DesignPreviewPanel = React.memo(({
-  selectedColor,
-  decals,
-  decalPositions,
-  designSummary
-}) => (
-  <motion.div
-    initial={{ opacity: 0, x: 20 }}
-    animate={{ opacity: 1, x: 0 }}
-    transition={{ duration: 0.3 }}
-    className="lg:col-span-2"
-  >
-    <div className="bg-white rounded-2xl shadow-xl p-6 h-full">
-      <h2 className="text-xl font-bold text-gray-900 mb-6 text-center">
-        Design Preview
-      </h2>
-      
-      <div className="flex flex-col items-center">
-        {/* Shoe Visualization */}
-        <ShoeVisualization
-          selectedColor={selectedColor}
-          decals={decals}
-          decalPositions={decalPositions}
-        />
-
-        {/* Design Details */}
-        <DesignDetails designSummary={designSummary} />
-      </div>
-    </div>
-  </motion.div>
-));
-
-DesignPreviewPanel.displayName = 'DesignPreviewPanel';
-
-// Shoe Visualization Component
-const ShoeVisualization = React.memo(({ selectedColor, decals, decalPositions }) => (
-  <div className="relative mb-8">
-    <motion.div 
-      animate={{ rotate: [0, 5, -5, 0] }}
-      transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-      className="w-64 h-64 rounded-2xl shadow-lg transition-all duration-300"
-      style={{ 
-        backgroundColor: selectedColor,
-        backgroundImage: decals.length > 0 
-          ? 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.1), transparent)' 
-          : 'none'
-      }}
-    >
-      {/* Decals with animation */}
-      <AnimatePresence>
-        {decals.map((decal, index) => (
-          <motion.div
-            key={decal.id}
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0 }}
-            transition={{ duration: 0.3 }}
-            className="absolute text-3xl"
-            style={decalPositions[index] || { top: '50%', left: '50%' }}
-          >
-            <motion.span
-              animate={{ rotate: [0, 10, -10, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+      {/* Controls */}
+      <section className="w-full lg:w-1/3 bg-white flex flex-col max-h-[45vh] lg:max-h-screen shadow-2xl">
+        <div className="p-6 lg:p-8 overflow-y-auto flex-grow">
+          <header className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <h2 className="text-3xl font-black uppercase tracking-tight">Customize</h2>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                Design your signature look
+              </p>
+            </div>
+            <Link
+              to="/my-designs"
+              className="text-[10px] font-bold uppercase tracking-widest border border-black px-4 py-2 rounded-full hover:bg-black hover:text-white transition"
             >
-              {decal.icon}
-            </motion.span>
-          </motion.div>
-        ))}
-      </AnimatePresence>
-    </motion.div>
-    
-    {/* Details Overlay */}
-    <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded-lg shadow-lg">
-      <div className="flex items-center space-x-4">
-        <div className="flex items-center space-x-2">
-          <div className="text-sm text-gray-600">Color:</div>
-          <div 
-            className="w-4 h-4 rounded border"
-            style={{ backgroundColor: selectedColor }}
-          />
+              My Designs ({savedDesigns.length})
+            </Link>
+          </header>
+
+          {/* Design Name */}
+          <div className="mb-5">
+            <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-500 mb-2">
+              Design Name
+            </label>
+            <input
+              type="text"
+              value={designName}
+              onChange={(e) => setDesignName(e.target.value)}
+              placeholder="Enter name..."
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              maxLength={50}
+            />
+          </div>
+
+          {/* Parts */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {parts.map((part) => (
+              <button
+                key={part.id}
+                onClick={() => setActivePart(part.id)}
+                className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                  activePart === part.id
+                    ? "border-black bg-black text-white"
+                    : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-400"
+                }`}
+              >
+                <span>{part.icon}</span>
+                <div
+                  className="w-4 h-4 rounded-full border border-current"
+                  style={{ backgroundColor: colors[part.id] }}
+                />
+                <span className="text-[11px] font-bold uppercase tracking-tight">
+                  {part.label}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Color Picker */}
+          <div className="bg-gray-50 p-6 rounded-2xl border-2 border-gray-200">
+            <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-3">
+              Color for {parts.find((p) => p.id === activePart)?.label}
+            </label>
+            <input
+              type="color"
+              value={colors[activePart]}
+              onChange={(e) => updateColor(e.target.value)}
+              className="w-full h-16 rounded-xl cursor-pointer border-4 border-white shadow-lg mb-4"
+            />
+            <div className="flex items-center gap-2 bg-white rounded-xl p-2 border-2 border-gray-200">
+              <span className="text-gray-600 font-bold">#</span>
+              <input
+                type="text"
+                value={colors[activePart].replace("#", "")}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9A-Fa-f]/g, "");
+                  if (value.length <= 6) updateColor(`#${value.padEnd(6, "0")}`);
+                }}
+                placeholder="FFFFFF"
+                className="flex-1 px-2 py-2 text-sm uppercase focus:outline-none font-mono"
+                maxLength={6}
+              />
+            </div>
+          </div>
         </div>
-        <div className="text-sm text-gray-600">
-          Decals: <span className="font-medium">{decals.length}</span>
+
+        {/* Actions */}
+        <div className="p-6 border-t border-gray-100 bg-white flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={handleSaveDesign}
+              disabled={!is3DReady}
+              className={`py-3 text-[11px] font-bold uppercase tracking-widest border-2 border-black rounded-full transition ${
+                is3DReady
+                  ? "hover:bg-gray-100 cursor-pointer"
+                  : "opacity-50 cursor-not-allowed"
+              }`}
+            >
+              💾 Save
+            </button>
+            <button
+              onClick={handleAddToCart}
+              disabled={!is3DReady}
+              className={`py-3 text-[11px] font-bold uppercase tracking-widest bg-black text-white rounded-full transition ${
+                is3DReady
+                  ? "hover:bg-gray-800 cursor-pointer"
+                  : "opacity-50 cursor-not-allowed"
+              }`}
+            >
+              🛒 Add to Cart
+            </button>
+          </div>
+          <button
+            onClick={handleDownload}
+            disabled={!is3DReady}
+            className={`w-full py-3 text-[11px] font-bold uppercase tracking-widest border-2 border-black rounded-full transition ${
+              is3DReady
+                ? "hover:bg-black hover:text-white cursor-pointer"
+                : "opacity-50 cursor-not-allowed"
+            }`}
+          >
+            📥 Download
+          </button>
+          <button
+            onClick={handleReset}
+            className="w-full py-3 text-[11px] font-bold uppercase tracking-widest border border-gray-300 rounded-full hover:bg-gray-50 transition"
+          >
+            🔄 Reset
+          </button>
         </div>
-      </div>
-    </div>
-  </div>
-));
-
-ShoeVisualization.displayName = 'ShoeVisualization';
-
-// Design Details Component
-const DesignDetails = React.memo(({ designSummary }) => (
-  <div className="w-full max-w-md space-y-4">
-    <div className="bg-gray-50 rounded-xl p-4">
-      <h3 className="font-medium text-gray-900 mb-2">Design Summary</h3>
-      <div className="space-y-2 text-sm">
-        <SummaryRow label="Name:" value={designSummary.name} />
-        <SummaryRow label="Base Color:" value={designSummary.color} isColor />
-        <SummaryRow label="Decals Applied:" value={designSummary.decalCount} />
-        <SummaryRow label="Price:" value={`₹${designSummary.price.toLocaleString()}`} isBold />
-      </div>
-    </div>
-
-    <QuickTips />
-  </div>
-));
-
-DesignDetails.displayName = 'DesignDetails';
-
-// Summary Row Component
-const SummaryRow = React.memo(({ label, value, isColor, isBold }) => (
-  <div className="flex justify-between">
-    <span className="text-gray-600">{label}</span>
-    {isColor ? (
-      <div className="flex items-center space-x-2">
-        <div 
-          className="w-3 h-3 rounded"
-          style={{ backgroundColor: value }}
-        />
-        <span className="font-medium text-gray-900">{value}</span>
-      </div>
-    ) : (
-      <span className={isBold ? 'font-bold text-gray-900' : 'font-medium text-gray-900'}>
-        {value}
-      </span>
-    )}
-  </div>
-));
-
-SummaryRow.displayName = 'SummaryRow';
-
-// Quick Tips Component
-const QuickTips = React.memo(() => {
-  const tips = useMemo(() => [
-    'Choose a base color first',
-    'Add up to 5 decals',
-    'Save your design before adding to cart',
-    'You can edit anytime'
-  ], []);
-
-  return (
-    <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4">
-      <h3 className="font-medium text-gray-900 mb-2">💡 Tips</h3>
-      <ul className="text-sm text-gray-600 space-y-1">
-        {tips.map((tip, index) => (
-          <li key={index}>• {tip}</li>
-        ))}
-      </ul>
+      </section>
     </div>
   );
-});
+}
 
-QuickTips.displayName = 'QuickTips';
-
-export default React.memo(Designer);
+export default ShoeConfigurator;
