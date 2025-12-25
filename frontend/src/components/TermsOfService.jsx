@@ -29,7 +29,7 @@ const TermsOfService = () => {
           <div className="mb-8 p-4 bg-yellow-50 border-l-4 border-yellow-500">
             <p className="text-yellow-800 font-bold mb-2">⚠️ IMPORTANT NOTICE</p>
             <p className="text-yellow-700">
-              Please read these Terms of Service carefully before using ShoeCreatify. 
+              Please read these Terms of Service carefully before using ShoeCraftify. 
               By accessing or using our platform, you agree to be bound by these terms.
             </p>
           </div>
@@ -38,7 +38,7 @@ const TermsOfService = () => {
           <section className="mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Acceptance of Terms</h2>
             <p className="text-gray-700 mb-3">
-              By accessing and using the <strong>ShoeCreatify</strong> website and services 
+              By accessing and using the <strong>ShoeCraftify</strong> website and services 
               (the "Platform"), you accept and agree to be bound by these Terms of Service 
               ("Terms"). If you do not agree to these Terms, you must not use our Platform.
             </p>
@@ -70,7 +70,7 @@ const TermsOfService = () => {
                 You retain ownership of your original shoe designs created on our Platform.
               </p>
               <p className="text-gray-700">
-                By submitting designs, you grant ShoeCreatify a worldwide, non-exclusive, 
+                By submitting designs, you grant ShoeCraftify a worldwide, non-exclusive, 
                 royalty-free license to:
               </p>
               <ul className="list-disc pl-5 space-y-2 text-gray-700 mt-2">
@@ -83,7 +83,7 @@ const TermsOfService = () => {
             <div className="mb-4">
               <h4 className="font-bold text-gray-800 mb-2">B. Our Intellectual Property</h4>
               <p className="text-gray-700 mb-3">
-                All Platform content, features, and functionality are owned by ShoeCreatify 
+                All Platform content, features, and functionality are owned by ShoeCraftify 
                 and are protected by intellectual property laws.
               </p>
               <p className="text-gray-700">
@@ -189,7 +189,7 @@ const TermsOfService = () => {
             <div className="mb-4">
               <h4 className="font-bold text-gray-800 mb-2">B. Limitation of Liability</h4>
               <p className="text-gray-700">
-                To the maximum extent permitted by law, ShoeCreatify shall not be liable for:
+                To the maximum extent permitted by law, ShoeCraftify shall not be liable for:
               </p>
               <ul className="list-disc pl-5 space-y-2 text-gray-700 mt-2">
                 <li>Indirect, incidental, or consequential damages</li>
@@ -237,16 +237,16 @@ const TermsOfService = () => {
               <div>
                 <p className="font-bold text-gray-800">Legal Department</p>
                 <p className="text-gray-700">
-                  <a href="mailto:legal@shoecreatify.com" className="text-blue-600 hover:text-blue-800">
-                    legal@shoecreatify.com
+                  <a href="mailto:legal@shoecraftify.com" className="text-blue-600 hover:text-blue-800">
+                    legal@shoecraftify.com
                   </a>
                 </p>
               </div>
               <div>
                 <p className="font-bold text-gray-800">Customer Support</p>
                 <p className="text-gray-700">
-                  <a href="mailto:support@shoecreatify.com" className="text-blue-600 hover:text-blue-800">
-                    support@shoecreatify.com
+                  <a href="mailto:support@shoecraftify.com" className="text-blue-600 hover:text-blue-800">
+                    support@shoecraftify.com
                   </a>
                 </p>
               </div>
@@ -264,7 +264,7 @@ const TermsOfService = () => {
           {/* Agreement Section */}
           <div className="mt-8 p-6 bg-gray-50 rounded-xl">
             <p className="text-gray-700 text-center">
-              By using ShoeCreatify, you acknowledge that you have read, understood, 
+              By using ShoeCraftify, you acknowledge that you have read, understood, 
               and agree to be bound by these Terms of Service.
             </p>
           </div>
@@ -273,7 +273,7 @@ const TermsOfService = () => {
           <div className="mt-8 pt-8 border-t border-gray-200">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <p className="text-gray-600 text-sm mb-4 md:mb-0">
-                © {new Date().getFullYear()} ShoeCreatify. All rights reserved.
+                © {new Date().getFullYear()} ShoeCraftify. All rights reserved.
               </p>
               <div className="flex space-x-6">
                 <Link to="/privacy" className="text-blue-600 hover:text-blue-800 text-sm">

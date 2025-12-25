@@ -28,16 +28,16 @@ const PrivacyPolicy = () => {
           {/* Introduction */}
           <section className="mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Welcome to ShoeCreatify
+              Welcome to ShoeCraftify
             </h2>
             <p className="text-gray-700 mb-4">
-              At <strong>ShoeCreatify</strong> ("we," "us," or "our"), we are committed to protecting 
+              At <strong>ShoeCraftify</strong> ("we," "us," or "our"), we are committed to protecting 
               your privacy and ensuring the security of your personal information. This Privacy Policy 
               explains how we collect, use, disclose, and safeguard your information when you visit 
               our website and use our 3D shoe design platform.
             </p>
             <p className="text-gray-700">
-              By using ShoeCreatify, you agree to the collection and use of information in accordance 
+              By using ShoeCraftify, you agree to the collection and use of information in accordance 
               with this policy.
             </p>
           </section>
@@ -150,8 +150,8 @@ const PrivacyPolicy = () => {
             </ul>
             <p className="text-gray-700 mt-4">
               To exercise these rights, contact us at: 
-              <a href="mailto:privacy@shoecreatify.com" className="text-blue-600 hover:text-blue-800 ml-2">
-                privacy@shoecreatify.com
+              <a href="mailto:privacy@shoecraftify.com" className="text-blue-600 hover:text-blue-800 ml-2">
+                privacy@shoecraftify.com
               </a>
             </p>
           </section>
@@ -177,7 +177,7 @@ const PrivacyPolicy = () => {
           <section className="mb-8">
             <h3 className="text-xl font-bold text-gray-900 mb-4">7. Children's Privacy</h3>
             <p className="text-gray-700">
-              ShoeCreatify is not intended for children under 13. We do not knowingly collect 
+              ShoeCraftify is not intended for children under 13. We do not knowingly collect 
               personal information from children under 13. If you believe we have collected 
               information from a child, please contact us immediately.
             </p>
@@ -206,8 +206,8 @@ const PrivacyPolicy = () => {
             <div className="space-y-2">
               <p className="text-gray-700">
                 <strong>Email:</strong> 
-                <a href="mailto:privacy@shoecreatify.com" className="text-blue-600 hover:text-blue-800 ml-2">
-                  privacy@shoecreatify.com
+                <a href="mailto:privacy@shoecraftify.com" className="text-blue-600 hover:text-blue-800 ml-2">
+                  privacy@shoecraftify.com
                 </a>
               </p>
               <p className="text-gray-700">
@@ -227,7 +227,7 @@ const PrivacyPolicy = () => {
           <div className="mt-8 pt-8 border-t border-gray-200">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <p className="text-gray-600 text-sm mb-4 md:mb-0">
-                © {new Date().getFullYear()} ShoeCreatify. All rights reserved.
+                © {new Date().getFullYear()} ShoeCraftify. All rights reserved.
               </p>
               <div className="flex space-x-6">
                 <Link to="/terms" className="text-blue-600 hover:text-blue-800 text-sm">

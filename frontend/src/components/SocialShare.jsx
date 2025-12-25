@@ -14,7 +14,7 @@ import {
 const SocialShare = ({ design }) => {
   const [showShareOptions, setShowShareOptions] = useState(false);
   const shareUrl = window.location.href;
-  const title = design ? `Check out my custom ${design.name} design!` : 'Design amazing shoes with ShoeCreatify!';
+  const title = design ? `Check out my custom ${design.name} design!` : 'Design amazing shoes with ShoeCraftify!';
   const image = design ? `/api/design-image/${design.id}` : '/og-image.jpg';
 
   const sharePlatforms = [

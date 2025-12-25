@@ -83,7 +83,7 @@ const Suggestion = () => {
       
       const link = document.createElement('a');
       link.href = url;
-      link.download = `ShoeCreatify-${Date.now()}.png`;
+      link.download = `ShoeCraftify-${Date.now()}.png`;
       
       document.body.appendChild(link);
       link.click();
@@ -385,7 +385,7 @@ const handleSaveDesign = async () => {
       <div className="relative max-w-6xl mx-auto px-6 py-12">
         <header className="flex flex-col items-center mb-16 text-center">
           <h1 className="text-5xl md:text-7xl font-bold tracking-tighter bg-gradient-to-b from-white to-white/50 bg-clip-text text-transparent">
-            ShoeCreatify
+            ShoeCraftify
           </h1>
           <p className="mt-4 text-neutral-400 max-w-md text-lg">
             Turn your imagination into premium 3D concepts with the power of generative AI.

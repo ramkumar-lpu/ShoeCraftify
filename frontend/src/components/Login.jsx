@@ -254,7 +254,7 @@ const AuthHeroSection = React.memo(() => (
   <div className="hidden lg:block bg-white rounded-2xl shadow-xl p-8">
     <div className="mb-8">
       <h1 className="text-4xl font-bold text-gray-900 mb-2">
-        SHOECREATIFY
+        SHOECRAFTIFY
       </h1>
       <p className="text-lg text-gray-600 mb-6">
         Design custom shoes with our intuitive 3D editor
