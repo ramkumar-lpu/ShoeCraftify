@@ -29,13 +29,21 @@ const userSchema = new mongoose.Schema({
   },
   
   // Profile image - using URL approach
-  profilePicture: {
-    url: {
-      type: String,
-      default: 'https://res.cloudinary.com/your-cloud/image/upload/v1/defaults/default-avatar.png'
-    },
-    publicId: String, // For cloud storage like Cloudinary
-    uploadedAt: Date
+  // profilePicture: {
+  //   url: {
+  //     type: String,
+  //     default: 'https://res.cloudinary.com/your-cloud/image/upload/v1/defaults/default-avatar.png'
+  //   },
+  //   publicId: String, // For cloud storage like Cloudinary
+  //   uploadedAt: Date
+  // },
+   profileImage: {
+    type: String,
+    default: null
+  },
+  profilePicturePublicId: {
+    type: String,
+    default: null
   },
   
   // Password fields (only for manual login)
@@ -320,12 +328,10 @@ userSchema.methods.resetFailedAttempts = function() {
 // ========== PROFILE METHODS ==========
 
 // Method to update profile picture
-userSchema.methods.updateProfilePicture = function(url, publicId = null) {
-  this.profilePicture = {
-    url: url,
-    publicId: publicId,
-    uploadedAt: new Date()
-  };
+// Remove the old updateProfilePicture method and replace with:
+userSchema.methods.updateProfilePicture = function(imageUrl, publicId = null) {
+  this.profileImage = imageUrl;
+  this.profilePicturePublicId = publicId;
 };
 
 // ========== STATIC METHODS ==========

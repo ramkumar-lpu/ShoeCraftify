@@ -93,6 +93,7 @@ const AppRoutes = ({ user, onLoginSuccess, updateUser }) => {
             )
           }
         />
+        
         <Route
           path="/cart"
           element={

@@ -379,9 +379,9 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaShoppingCart, FaBars, FaTimes } from 'react-icons/fa';
-import { FiLogOut, FiUser, FiSettings } from 'react-icons/fi';
+import { FiLogOut, FiUser, FiFolder } from 'react-icons/fi';
 import shoecreatifyLogo from '../assets/logo.png';
-
+import { MdOutlineImage } from 'react-icons/md'
 const Navbar = ({ user, onLogout, cartCount = 0 }) => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -491,7 +491,8 @@ const Navbar = ({ user, onLogout, cartCount = 0 }) => {
                   </div>
                   <div className="space-y-1 text-xs font-bold uppercase tracking-widest">
                     <DropdownLink to="/profile" icon={<FiUser />} label="Profile" />
-                    <DropdownLink to="/settings" icon={<FiSettings />} label="Settings" />
+                
+                    <DropdownLink to="/my-designs" icon={<MdOutlineImage />} label="My Designs" />
                     <button
                       onClick={onLogout}
                       className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl"
