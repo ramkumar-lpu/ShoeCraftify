@@ -2216,7 +2216,7 @@ const MyDesigns = () => {
       let apiDesigns = [];
       if (userData) {
         try {
-          const res = await fetch('http://localhost:5000/api/designs/my-designs', {
+          const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/designs/my-designs`, {
             credentials: 'include'
           });
           
@@ -2405,7 +2405,7 @@ const MyDesigns = () => {
           console.log('Attempting to delete from backend with id:', mongoId);
           
           try {
-            const res = await fetch(`http://localhost:5000/api/designs/${mongoId}`, {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/designs/${mongoId}`, {
               method: 'DELETE',
               credentials: 'include'
             });

@@ -59,7 +59,7 @@ const Profile = ({ user, updateUser }) => {
       console.log('Base64 conversion complete, size:', base64Image.length);
       
       // Upload via your new backend route
-      const response = await fetch('http://localhost:5000/api/profile/upload-profile-picture', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/profile/upload-profile-picture`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,7 +113,7 @@ const Profile = ({ user, updateUser }) => {
       setIsLoading(true);
       try {
         // Check session auth
-        const authRes = await fetch('http://localhost:5000/api/auth/user', { credentials: 'include' });
+        const authRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/user`, { credentials: 'include' });
         if (authRes.ok) {
           const authData = await authRes.json();
           if (authData.success && authData.user) {
@@ -123,7 +123,7 @@ const Profile = ({ user, updateUser }) => {
 
         // API designs (Suggestions saves here)
         let apiDesigns = [];
-        const apiRes = await fetch('http://localhost:5000/api/designs/my-designs', { credentials: 'include' });
+        const apiRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/designs/my-designs`, { credentials: 'include' });
         if (apiRes.ok) {
           const apiData = await apiRes.json();
           if (apiData.success && Array.isArray(apiData.designs)) {
@@ -251,7 +251,7 @@ const Profile = ({ user, updateUser }) => {
   const handleEditProfile = useCallback(async () => {
     try {
       // Save to database
-      const res = await fetch('http://localhost:5000/api/auth/update-profile', {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/update-profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -300,7 +300,7 @@ const Profile = ({ user, updateUser }) => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('http://localhost:5000/api/profile/upload-profile-picture', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/profile/upload-profile-picture`, {
         method: 'POST',
         body: formData,
         credentials: 'include'
@@ -364,7 +364,7 @@ const Profile = ({ user, updateUser }) => {
       return;
     }
     try {
-      await axios.post('http://localhost:5000/api/auth/change-password', {
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-password`, {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword
       }, { withCredentials: true });
@@ -389,7 +389,7 @@ const Profile = ({ user, updateUser }) => {
 
   const handleLogout = useCallback(async () => {
     try {
-      await axios.post('http://localhost:5000/api/auth/logout', {}, { withCredentials: true });
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/logout`, {}, { withCredentials: true });
       window.location.href = '/login';
     } catch (err) {
       console.error('Logout error:', err);
@@ -1090,7 +1090,7 @@ const SettingsTab = React.memo(({
         <button
           onClick={async () => {
             try {
-              const res = await fetch('http://localhost:5000/api/profile/test', {
+              const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/profile/test`, {
                 credentials: 'include'
               });
               const data = await res.json();

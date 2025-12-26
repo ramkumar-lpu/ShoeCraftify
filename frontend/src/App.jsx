@@ -18,6 +18,7 @@ const PageLoader = () => (
 
 // Configure axios
 axios.defaults.withCredentials = true;
+axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
 function App() {
   const [user, setUser] = useState(null);

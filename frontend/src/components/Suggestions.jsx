@@ -24,7 +24,7 @@ const Suggestion = () => {
 
   const checkAuth = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/auth/user', {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/user`, {
         credentials: 'include',
         headers: {
           'Cache-Control': 'no-cache'
@@ -55,12 +55,12 @@ const Suggestion = () => {
   };
 
   const handleLogin = () => {
-    window.location.href = 'http://localhost:5000/api/auth/google';
+    window.location.href = `${import.meta.env.VITE_BACKEND_URL}/api/auth/google`;
   };
 
   const handleLogout = async () => {
     try {
-      await fetch('http://localhost:5000/api/auth/logout', {
+      await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/logout`, {
         method: 'POST',
         credentials: 'include'
       });
@@ -121,7 +121,7 @@ const handleSaveDesign = async () => {
       try {
         showToast("Uploading to cloud storage...", 'info');
         
-        const uploadRes = await fetch('http://localhost:5000/api/designs/upload-base64', {
+        const uploadRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/designs/upload-base64`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -144,7 +144,7 @@ const handleSaveDesign = async () => {
     
     console.log('Saving design with URL:', cloudinaryUrl.substring(0, 100) + '...');
     
-    const res = await fetch('http://localhost:5000/api/designs', {
+    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/designs`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -259,7 +259,7 @@ const handleSaveDesign = async () => {
     setRating(0);
     
     try {
-      const res = await fetch('http://localhost:5000/api/shoe/generate-shoe', {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shoe/generate-shoe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: prompt.trim() }),
