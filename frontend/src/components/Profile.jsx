@@ -242,8 +242,8 @@ const Profile = ({ user, updateUser }) => {
 
   // Tabs - Removed Achievements tab
   const tabs = useMemo(() => [
-    { id: 'designs', label: 'My Designs', icon: '👟', count: designs.length },
-    { id: 'stats', label: 'Statistics', icon: '📊', count: null },
+    { id: 'designs', label: 'My Designs', icon: '', count: designs.length },
+    { id: 'stats', label: 'Statistics', icon: '', count: null },
     { id: 'settings', label: 'Settings', icon: '⚙️', count: null },
   ], [designs.length]);
 
