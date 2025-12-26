@@ -154,7 +154,7 @@ router.post('/register', registrationOTPLimiter, validateRegisterInput, async (r
     const existingUser = await User.findOne({ email: normalizedEmail });
     
     if (existingUser) {
-      console.log('⚠️ User already exists:', normalizedEmail);
+      console.log(' User already exists:', normalizedEmail);
       
       if (existingUser.accountType === 'google') {
         return res.status(409).json({
@@ -276,7 +276,7 @@ router.post('/verify-registration-otp', otpVerifyLimiter, async (req, res) => {
     user.resetFailedAttempts();
     
     await user.save();
-    console.log('✅ User account activated:', user._id);
+    console.log(' User account activated:', user._id);
     
     // Send welcome email
     sendWelcomeEmail(user).catch(err => console.error('Email error:', err));

@@ -15,7 +15,7 @@ import orderRoutes from './routes/orderRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import { suggestionRouter } from './routes/suggestion.route.js';
-import profileRoutes from './routes/profile.js'; // ✅ ADD THIS
+import profileRoutes from './routes/profile.js'; 
 
 // Create Express app
 const app = express();
@@ -23,9 +23,9 @@ const PORT = process.env.PORT || 5000;
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/shoecreatify')
-  .then(() => console.log('✅ MongoDB Connected'))
+  .then(() => console.log(' MongoDB Connected'))
   .catch(err => {
-    console.error('❌ MongoDB Connection Error:', err.message);
+    console.error(' MongoDB Connection Error:', err.message);
     process.exit(1);
   });
 
@@ -102,7 +102,7 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`\n🚀 Server running on http://localhost:${PORT}`);
-  console.log(`🔗 Google Auth: http://localhost:${PORT}/api/auth/google`);
+  console.log(`\n Server running on http://localhost:${PORT}`);
+  console.log(` Google Auth: http://localhost:${PORT}/api/auth/google`);
   console.log(`\nPress Ctrl+C to stop\n`);
 });
