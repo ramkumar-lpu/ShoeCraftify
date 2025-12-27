@@ -11,8 +11,8 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
 
-// Use raw.githack.com CDN for CORS-enabled access to GitHub files
-const MODEL_URL = "https://raw.githack.com/ramkumar-lpu/shoe-assets/main/nikeShoes.glb";
+// Load model from public folder
+const MODEL_URL = "/nikeShoes.glb";
 useGLTF.preload(MODEL_URL);
 
 // Lightweight Loader
