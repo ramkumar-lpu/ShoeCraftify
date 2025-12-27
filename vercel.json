@@ -3,11 +3,11 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "env": {
-    "VITE_BACKEND_URL": "@vite_backend_url"
+    "VITE_BACKEND_URL": "https://shoecraftify-production.up.railway.app"
   },
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!.*\\.(glb|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp|json)).*)",
       "destination": "/index.html"
     }
   ]
