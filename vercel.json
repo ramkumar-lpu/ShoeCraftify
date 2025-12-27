@@ -3,7 +3,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "env": {
-    "VITE_BACKEND_URL": "https://shoecraftify-production.up.railway.app"
+    "VITE_BACKEND_URL": "https://backend-1-1qk3.onrender.com"
   },
   "rewrites": [
     {
