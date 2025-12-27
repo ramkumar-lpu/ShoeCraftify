@@ -90,20 +90,21 @@ const AppRoutes = ({ user, onLoginSuccess, updateUser }) => {
         />
         
         <Route
-          path="/designer"
+          path="/dashboard"
           element={
             user ? (
-              <Designer user={user} />
+              <Profile user={user} updateUser={updateUser} />
             ) : (
               <Navigate to="/login" replace />
             )
           }
         />
-          <Route
-          path="/dashboard"
+        
+        <Route
+          path="/designer"
           element={
             user ? (
-              <Profile user={user} updateUser={updateUser} />
+              <Designer user={user} />
             ) : (
               <Navigate to="/login" replace />
             )
