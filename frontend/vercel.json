@@ -4,5 +4,16 @@
       "source": "/((?!.*\\.(glb|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp|json)).*)",
       "destination": "/index.html"
     }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
   ]
 }
