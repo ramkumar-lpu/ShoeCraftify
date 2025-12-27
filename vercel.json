@@ -1,6 +1,10 @@
 {
-  "buildCommand": "npm install --prefix=frontend && npm run build --prefix=frontend",
-  "outputDirectory": "frontend/dist",
+  "root": "frontend",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "env": {
+    "VITE_BACKEND_URL": "@vite_backend_url"
+  },
   "rewrites": [
     {
       "source": "/(.*)",
