@@ -11,7 +11,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
 
-// Load model from public folder
+// Load model from public folder (compressed WebP + Draco ~22MB)
 const MODEL_URL = "/nikeShoes.glb";
 useGLTF.preload(MODEL_URL);
 
